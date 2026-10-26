@@ -1,0 +1,35 @@
+Approved, with these changes:
+
+1. Workload identity: resolve Pod → ReplicaSet → Deployment via ownerReferences
+   with UID checks, and store controller identity separately from service identity.
+   Remove the match.service_name fallback in _call_tool. On-prem Deployments are
+   appname-{{version}} and Services are appname, so service name ≠ Deployment name
+   by design. Naming conventions may be used only as a hint, never as proof.
+
+2. Typed tool errors (pulled forward): anchor-kube and main return structured
+   errors at least for ownership_mismatch, not_found, rbac_denied and timeout, with
+   the verified alternative when known (e.g. the actual owning Deployment). Main
+   retries once with the corrected identity and never repeats the same invalid call.
+
+3. Source stage as a completion guard, not a scripted pipeline: an RCA whose cause
+   is an application startup failure cannot finish until GitLab source/config at the
+   verified ref was read, or a specific blocker is recorded (missing project/ref,
+   access denied, budget). Show "source stage pending" in the harness_state reminder
+   from the moment the exception is found, so the model schedules it early.
+
+4. Per-claim citations: each claim (root cause, ruled-out alternatives, timeline)
+   cites its own evidence. Ruled-out alternatives are kind=ruled_out. Do not weaken
+   _verification_gaps; fix the single shared citation set instead.
+
+5. Budget and review: raise the investigation wall limit to the 15 minutes in the
+   harness design (or make it configurable), reserve time for source reads and
+   review, and report a reviewer timeout as "review unavailable", separate from
+   evidence strength.
+
+6. Restart count: previous-container logs cover only the last restart. The answer
+   must say how many of the 4 restarts per pod are evidenced, not assume all match.
+
+Acceptance: replay investigation 6907c55b in both modes. It must reach GitLab reads
+of GetPoliciesDataService / PolicyNotFoundException at the verified ref (or a
+precise blocker), with no generic "tool failed", within budget. Add it to the
+replay suite. Report before/after: tool calls, time, status, blockers.
