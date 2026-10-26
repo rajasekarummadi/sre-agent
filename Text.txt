@@ -29,6 +29,18 @@ Approved, with these changes:
 6. Restart count: previous-container logs cover only the last restart. The answer
    must say how many of the 4 restarts per pod are evidenced, not assume all match.
 
+7. Status labels: verify the RCA status is assigned by code, not the model:
+   - established: cause evidence-backed and all checks passed
+   - probable: mechanism evidence-backed, something still open
+     (underlying cause, review, budget)
+   - unknown: no mechanism found; only this shows "Not established"
+   Extend root_cause additively with confirmed[] and open[] (each item with
+   evidence IDs or a blocker reason). The UI shows the label with these two
+   lines, e.g. "Probable. Confirmed: startup failure → exit 1 → restart.
+   Open: why the policy service didn't respond." Old records without the
+   fields must still render.
+
+
 Acceptance: replay investigation 6907c55b in both modes. It must reach GitLab reads
 of GetPoliciesDataService / PolicyNotFoundException at the verified ref (or a
 precise blocker), with no generic "tool failed", within budget. Add it to the
