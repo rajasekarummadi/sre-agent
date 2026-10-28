@@ -1,8 +1,11 @@
-Thanks. Two things before continuing:
-1. Turn the direct validation checks into pytest tests: counts per family,
-   sensitive-looking input rejected, idempotent rebuild, refuses to overwrite
-   edited cases, duplicate rejection.
-2. Add a single test entry point (make test or scripts/test.sh) that always uses
-   .venv/bin/python, and use it from now on. Run the full backend and replay
-   suites with it and report results.
-Then continue with items 2–5 from my previous message.
+Approve the 4 standalone status/restart proposals. For the other 16:
+- Follow-ups: convert to multi-turn cases that include the prior turn
+  (redacted) and the confirmed target; expected: no re-asking for the target.
+- Incident-ID questions: keep, expected_route investigate.
+- Conceptual question: keep, expected_route answer, no tool calls.
+- Greetings: keep one as a routing case (answer, no tools), reject the rest.
+- Fully redacted message: reject.
+- Put the 3 downvoted cases first in my review packet, each with what Anchor
+  did and why it was downvoted.
+Keep the rest pending; I'll review the packet.
+
