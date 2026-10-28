@@ -1,11 +1,14 @@
-Approve the 4 standalone status/restart proposals. For the other 16:
-- Follow-ups: convert to multi-turn cases that include the prior turn
-  (redacted) and the confirmed target; expected: no re-asking for the target.
-- Incident-ID questions: keep, expected_route investigate.
-- Conceptual question: keep, expected_route answer, no tool calls.
-- Greetings: keep one as a routing case (answer, no tools), reject the rest.
-- Fully redacted message: reject.
-- Put the 3 downvoted cases first in my review packet, each with what Anchor
-  did and why it was downvoted.
-Keep the rest pending; I'll review the packet.
+No case-specific changes yet; I'll review the packet first. Apply these rules
+to all proposals:
+- Follow-up cases: expected answer must use the confirmed target from the prior
+  turn; required evidence includes zero clarification prompts.
+- Restart/crash cases: required evidence = termination reason + exit code,
+  previous-container logs, events; the answer states how many restarts are
+  evidenced, not assumed.
+- Startup-failure cases: required evidence includes a source/config read at the
+  verified SHA, or a named blocker.
+- Status questions: route lookup; must not start an investigation.
+Also add the 4 known incidents (45a7ca8e, 33014af6, 6907c55b, 5745dbfc) with
+drafted expected_answer and must_inspect for me to correct.
+
 
