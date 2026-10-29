@@ -1,14 +1,25 @@
-No case-specific changes yet; I'll review the packet first. Apply these rules
-to all proposals:
-- Follow-up cases: expected answer must use the confirmed target from the prior
-  turn; required evidence includes zero clarification prompts.
-- Restart/crash cases: required evidence = termination reason + exit code,
-  previous-container logs, events; the answer states how many restarts are
-  evidenced, not assumed.
-- Startup-failure cases: required evidence includes a source/config read at the
-  verified SHA, or a named blocker.
-- Status questions: route lookup; must not start an investigation.
-Also add the 4 known incidents (45a7ca8e, 33014af6, 6907c55b, 5745dbfc) with
-drafted expected_answer and must_inspect for me to correct.
+Yes: remove config_versions from the RCA request and from the model-facing
+response schema; keep the authoritative value from state. Also list any other
+fields the model fills that code overwrites, and remove those too.
+
+Then latency (verifier: 100s, 7,510 of 7,537 output tokens were reasoning; RCA
+call timed out and retried identically):
+1. Per-node reasoning_effort in config (router/intake, agent, verifier, rca).
+   Proposal: agent medium; verifier and rca low. Validate on the replay suite
+   (6907c55b, 5745dbfc, 33014af6, 45a7ca8e): report latency and verdicts before
+   vs after.
+2. Per-node max_completion_tokens (includes reasoning) and per-node timeouts.
+3. Timeout handling: identify whether TimeoutError is the httpx client limit or
+   APIM. On retry, lower reasoning effort or reduce input; never resend the
+   identical request.
+4. Enable streaming for long calls (verifier, rca), with partial-progress events
+   to the UI.
+5. Report what the rca node generates that the verified structured draft
+   (root_cause, claims) doesn't already contain. If it's mostly formatting,
+   propose building the report deterministically from the draft, with the model
+   only writing a short summary.
+6. Log per call: node, effort, input/cached/output/reasoning tokens, latency.
+Stop after the report for items 1 and 5 before larger changes.
+
 
 
