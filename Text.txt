@@ -1,14 +1,16 @@
-Approved with three changes:
-1. Verifier ladder: high → medium only, never low (replay showed low misses
-   issues). If medium also hits the deadline, stop with "Review unavailable".
-   RCA writer keeps the full ladder plus _rca_retry_payload.
-2. Treat gateway 504 as a deadline (degrade, don't resend identical). 500/502/503
-   and connection errors retry once with a short backoff, as today.
-3. At startup, log the effective reasoning effort per node and its source
-   (models.yaml / env var / default), so the env overrides are visible.
-Field name and location in models.yaml are fine. Never log request or response
-bodies. Delivery as proposed; for the push, same conditions as before (secret
-scan, tell me if it triggers CI).
+Deployed. Please verify the running image, the startup Reasoning effort lines,
+and one live call showing the new log lines.
+
+Then, before streaming:
+1. Make the full suite green: have the test entry point set the catalog DSN
+   for test_conversation_api (or skip with an explicit reason when it's unset),
+   and fix test_graph_compacts_large_outputs_without_losing_cause_or_raw_lookup,
+   which also fails on 3fba8d9.
+2. Move the image override file out of ~/.copilot/session-state into
+   .anchor-local/ (gitignored) and update the deploy/rollback command.
+3. Add a sweep that marks investigations stuck in "running" with no live worker
+   as failed (the Oct 13 and Oct 22 records).
+
 
 
 
