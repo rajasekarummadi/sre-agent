@@ -1,20 +1,15 @@
-Decisions:
-1. Yes, deploy the schema cleanup. Commit it on the feature branch first (not
-   main), then deploy that commit's image.
-2. RCA writer: low. Reviewer: test medium on the same 4 runs, 3 repeats per arm
-   (high and medium), and report verdicts and issues found. Keep high unless
-   medium catches both 33014af6 issues in all repeats.
-3. Yes to the deterministic report; the model writes only a short cited summary.
-   For probable causes, show two labeled sections:
-   - "To confirm": the open items and the checks that would settle them
-   - "Likely fix if confirmed": remediation tied to the probable cause
-   Confirmed causes keep remediation as today.
-4. Move the chat-launched effort overrides (agent, router, intake, classify
-   forced to low) into config so they're visible. Don't change their values.
-5. Next small items: log the gateway status code and latency on every model
-   failure (item 6), and never resend an identical request after a deadline
-   (item 3). Streaming (item 4) after the deterministic report.
-Report after 1–3.
+Approved with three changes:
+1. Verifier ladder: high → medium only, never low (replay showed low misses
+   issues). If medium also hits the deadline, stop with "Review unavailable".
+   RCA writer keeps the full ladder plus _rca_retry_payload.
+2. Treat gateway 504 as a deadline (degrade, don't resend identical). 500/502/503
+   and connection errors retry once with a short backoff, as today.
+3. At startup, log the effective reasoning effort per node and its source
+   (models.yaml / env var / default), so the env overrides are visible.
+Field name and location in models.yaml are fine. Never log request or response
+bodies. Delivery as proposed; for the push, same conditions as before (secret
+scan, tell me if it triggers CI).
+
 
 
 
