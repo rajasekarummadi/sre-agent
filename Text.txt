@@ -1,19 +1,26 @@
-Good fixes; keep dc68a17. Before pushing, run the full suite via the test
-entry point (it was 19 red last time: catalog DSN + the compaction test).
+ba3436ed: good progress (probable, crashloop skill, plain-language gaps).
+Next, in this order:
 
-The retry makes this rarer but doesn't fix what happens when it still fails.
-Still open from my previous message:
-1. Stop path: any stop still goes through the deterministic report + status
-   rule. Evidenced mechanism → "probable" with the stop reason under
-   "To confirm"; "not established" only with no mechanism.
-   Test: force evaluate to fail twice on b0ee385f's evidence → "probable".
-2. Map re-read receipt IDs to their original evidence ID in code instead of
-   rejecting submit_root_cause.
-3. Explain why b0ee385f picked generic-triage vs pod-crashloop-oom before;
-   make the choice deterministic for the same evidence.
-4. No harness codes (G1/G3/H2) in the user-facing report.
-5. Cached vs uncached input per call for b0ee385f.
-Then push and build the image.
+1. Report dedupe (from the queued doc, item 4): each reviewer finding appears
+   once, under "To confirm". Remove it from Evidence weak, Follow-up checks,
+   Development review and the task panel text. Drop "No settling check
+   identified". Reviewer findings are findings, not "Not attempted".
+2. Receipt mapping in code for every tool that takes evidence IDs (todo_write
+   and submit_root_cause): map re-read receipts to the original ID.
+3. Library from logs: when logs or stack traces name a jar
+   (e.g. usb-dss-authorization-4.1.38.jar), resolve it to the GitLab project and
+   the matching tag, and search there for the exception/class definitions.
+   Add this as the first method in Change 2 of the deployed-commit work.
+4. Incident timing: state when the last crash happened and whether the
+   workload is healthy now (here: last exit 2026-10-21 16:09 UTC, pods Running
+   since). Use it in Impact instead of "not established".
+5. Tokens: 649k, stopped on the exploration allowance; 2 of 23 calls missing
+   usage. Fix usage reporting, then give cached vs uncached per call.
+Then implement the deployed-commit work from the doc (Changes 1–3).
+Acceptance: replay ba3436ed; source reads at the deployed SHA, policy classes
+found in usb-dss-authorization@4.1.38 (or a precise blocker), each finding
+shown once, timing stated.
+
 
 
 
