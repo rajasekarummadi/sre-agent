@@ -1,50 +1,73 @@
-ba3436ed: good progress (probable, crashloop skill, plain-language gaps).
-Next, in this order:
+Run ba3436ed: good progress (probable label, crashloop skill, plain-language
+gaps). Fix the following, in this order:
 
-1. Report dedupe (from the queued doc, item 4): each reviewer finding appears
-   once, under "To confirm". Remove it from Evidence weak, Follow-up checks,
-   Development review and the task panel text. Drop "No settling check
-   identified". Reviewer findings are findings, not "Not attempted".
-2. Receipt mapping in code for every tool that takes evidence IDs (todo_write
-   and submit_root_cause): map re-read receipts to the original ID.
-3. Library from logs: when logs or stack traces name a jar
-   (e.g. usb-dss-authorization-4.1.38.jar), resolve it to the GitLab project and
-   the matching tag, and search there for the exception/class definitions.
-   Add this as the first method in Change 2 of the deployed-commit work.
-4. Incident timing: state when the last crash happened and whether the
+1. Report dedupe: each reviewer finding appears once, under "To confirm".
+   Remove it from Evidence weak, Follow-up checks, Development review and the
+   task panel text. Drop the "No settling check identified" suffix. Reviewer
+   findings are findings, not "Not attempted".
+2. Receipt mapping in code for every tool that takes evidence IDs
+   (todo_write and submit_root_cause): map re-read receipts to the original
+   evidence ID instead of rejecting the call.
+3. Incident timing: state when the last crash happened and whether the
    workload is healthy now (here: last exit 2026-10-21 16:09 UTC, pods Running
    since). Use it in Impact instead of "not established".
-5. Tokens: 649k, stopped on the exploration allowance; 2 of 23 calls missing
-   usage. Fix usage reporting, then give cached vs uncached per call.
-Then implement the deployed-commit work from the doc (Changes 1–3).
-Acceptance: replay ba3436ed; source reads at the deployed SHA, policy classes
-found in usb-dss-authorization@4.1.38 (or a precise blocker), each finding
-shown once, timing stated.
-
-Also:
-6. One confidence signal: show a single status label (probable) with its
-   reason; remove the conflicting "LOW CONFIDENCE" badge / 49% mismatch.
-7. Reviewer feedback loop: if budget remains after review, do one revision
+4. One confidence signal: show a single status label (probable) with its
+   reason; remove the conflicting "LOW CONFIDENCE" badge and 49% mismatch.
+5. Reviewer feedback loop: if budget remains after review, do one revision
    round on concrete reviewer requests (e.g. cite crash diagnostics for the
    exit/restart claim; targeted read of spilled events) before finalizing.
-8. Events tool: filter by involvedObject (pod/ReplicaSet/Deployment/HPA of the
+6. Events tool: filter by involvedObject (pod/ReplicaSet/Deployment/HPA of the
    target) and time window server-side, so results don't spill on other
    workloads' noise (FailedGetScale for other HPAs here).
-9. "Likely fix" lists only fixes tied to findings; checks ("confirm deployed
+7. "Likely fix" lists only fixes tied to findings; checks ("confirm deployed
    commit", "collect more crash samples") go to "To confirm".
-10. Downstream check (proposal only): when config names a dependency endpoint
-    (internalapi.url.authdata here), resolve it to its service and check pods,
-    restarts and events around the crash time (2026-10-21 16:09 UTC).
-11. Add ba3436ed and b0ee385f to the replay suite; run the full suite via the
+8. Tokens: 649k, stopped on the exploration allowance; 2 of 23 calls missing
+   usage. Fix usage reporting, then report cached vs uncached input per call
+   and the largest context items.
+9. Downstream check (proposal only, don't implement): when config names a
+   dependency endpoint (internalapi.url.authdata here), resolve it to its
+   service and check pods, restarts and events around the crash time.
+10. Add ba3436ed and b0ee385f to the replay suite. Run the full suite via the
     test entry point before pushing.
 
+Feature branch only; same push conditions as before (secret scan, no CI).
+Acceptance: replay ba3436ed in both modes; each finding shown once, one
+status label, crash timing stated, no receipt-ID rejections.
+Report back before starting anything else.
 
 
 No Artifactory or registry tool exists; use Kubernetes and GitLab only.
-Report dedupe and token reporting were done in the previous change — skip
+Report dedupe and token reporting were done in the previous change - skip
 items 4 and 5 below if already complete.
 
+Goal: Anchor reads the code that is actually deployed. Investigation 1667f753
+searched cd7763d0 (branch head) but 9fbc51d0 was deployed.
 
+1. Deployed SHA, in order, stop at the first hit:
+   a. Deployment name suffix rel-<release>-<pipeline_id> + GitLab project from
+      the Deployment's source metadata -> GitLab Pipelines API sha
+      (suffix confirmed to be the Shield CIPipelineID)
+   b. image labels (org.opencontainers.image.revision, then .url job URL ->
+      Jobs API commit.id) - only once a registry read tool exists
+   c. else "deployed commit unknown" with the specific reason
+   Record each hop as evidence. Pin every source read to that SHA and flag
+   any read at a different ref.
+2. Defining library: jar name from logs/stack traces
+   (e.g. usb-dss-authorization-4.1.38.jar), else pom.xml at the deployed SHA
+   (skip org.springframework.*, java.*, javax.*, org.hibernate.*) -> library's
+   GitLab project (Accounts-Core siblings first) -> search at the matching tag.
+   Record "defined in <lib>@<version>".
+3. Use the GitLab project to fill missing catalog repo mappings; cross-check
+   the version suffix against the image tag.
+4. Report rendering: each reviewer finding appears once, under "To confirm".
+   Drop the "No settling check identified" suffix.
+5. Tokens (report only): cached vs uncached input per call and the largest
+   context items.
+
+Proposal first for 1-3. Feature branch only; same push conditions as before.
+Acceptance: replay 1667f753 and ba3436ed in both modes; source reads at
+9fbc51d0, policy classes found in usb-dss-authorization@4.1.38 (or a precise
+blocker), each finding shown once.
 
 
 
