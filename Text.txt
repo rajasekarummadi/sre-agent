@@ -21,6 +21,24 @@ Acceptance: replay ba3436ed; source reads at the deployed SHA, policy classes
 found in usb-dss-authorization@4.1.38 (or a precise blocker), each finding
 shown once, timing stated.
 
+Also:
+6. One confidence signal: show a single status label (probable) with its
+   reason; remove the conflicting "LOW CONFIDENCE" badge / 49% mismatch.
+7. Reviewer feedback loop: if budget remains after review, do one revision
+   round on concrete reviewer requests (e.g. cite crash diagnostics for the
+   exit/restart claim; targeted read of spilled events) before finalizing.
+8. Events tool: filter by involvedObject (pod/ReplicaSet/Deployment/HPA of the
+   target) and time window server-side, so results don't spill on other
+   workloads' noise (FailedGetScale for other HPAs here).
+9. "Likely fix" lists only fixes tied to findings; checks ("confirm deployed
+   commit", "collect more crash samples") go to "To confirm".
+10. Downstream check (proposal only): when config names a dependency endpoint
+    (internalapi.url.authdata here), resolve it to its service and check pods,
+    restarts and events around the crash time (2026-10-21 16:09 UTC).
+11. Add ba3436ed and b0ee385f to the replay suite; run the full suite via the
+    test entry point before pushing.
+
+
 
 
 
