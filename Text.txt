@@ -1,73 +1,20 @@
-Run ba3436ed: good progress (probable label, crashloop skill, plain-language
-gaps). Fix the following, in this order:
 
-1. Report dedupe: each reviewer finding appears once, under "To confirm".
-   Remove it from Evidence weak, Follow-up checks, Development review and the
-   task panel text. Drop the "No settling check identified" suffix. Reviewer
-   findings are findings, not "Not attempted".
-2. Receipt mapping in code for every tool that takes evidence IDs
-   (todo_write and submit_root_cause): map re-read receipts to the original
-   evidence ID instead of rejecting the call.
-3. Incident timing: state when the last crash happened and whether the
-   workload is healthy now (here: last exit 2026-10-21 16:09 UTC, pods Running
-   since). Use it in Impact instead of "not established".
-4. One confidence signal: show a single status label (probable) with its
-   reason; remove the conflicting "LOW CONFIDENCE" badge and 49% mismatch.
-5. Reviewer feedback loop: if budget remains after review, do one revision
-   round on concrete reviewer requests (e.g. cite crash diagnostics for the
-   exit/restart claim; targeted read of spilled events) before finalizing.
-6. Events tool: filter by involvedObject (pod/ReplicaSet/Deployment/HPA of the
-   target) and time window server-side, so results don't spill on other
-   workloads' noise (FailedGetScale for other HPAs here).
-7. "Likely fix" lists only fixes tied to findings; checks ("confirm deployed
-   commit", "collect more crash samples") go to "To confirm".
-8. Tokens: 649k, stopped on the exploration allowance; 2 of 23 calls missing
-   usage. Fix usage reporting, then report cached vs uncached input per call
-   and the largest context items.
-9. Downstream check (proposal only, don't implement): when config names a
-   dependency endpoint (internalapi.url.authdata here), resolve it to its
-   service and check pods, restarts and events around the crash time.
-10. Add ba3436ed and b0ee385f to the replay suite. Run the full suite via the
-    test entry point before pushing.
+Decisions:
+1. Yes, add search_projects(query, group) and list_tags(project, search) to
+   anchor-gitlab, read-only, bounded output. Leave uncommitted in that repo as
+   before and tell me what to deploy.
+2. Library location: I'll find where dss-parent-pom 4.1.38 and
+   usb-dss-authorization 4.1.x live and tell you. Until then, a miss is a
+   precise blocker, never a fallback to the branch head.
+3. Yes, resolver calls can sit outside the agent's 20-call cap, but they count
+   in the run's total calls and tokens.
+4. Confirmed: no catalog write-back.
 
-Feature branch only; same push conditions as before (secret scan, no CI).
-Acceptance: replay ba3436ed in both modes; each finding shown once, one
-status label, crash timing stated, no receipt-ID rejections.
-Report back before starting anything else.
-
-
-No Artifactory or registry tool exists; use Kubernetes and GitLab only.
-Report dedupe and token reporting were done in the previous change - skip
-items 4 and 5 below if already complete.
-
-Goal: Anchor reads the code that is actually deployed. Investigation 1667f753
-searched cd7763d0 (branch head) but 9fbc51d0 was deployed.
-
-1. Deployed SHA, in order, stop at the first hit:
-   a. Deployment name suffix rel-<release>-<pipeline_id> + GitLab project from
-      the Deployment's source metadata -> GitLab Pipelines API sha
-      (suffix confirmed to be the Shield CIPipelineID)
-   b. image labels (org.opencontainers.image.revision, then .url job URL ->
-      Jobs API commit.id) - only once a registry read tool exists
-   c. else "deployed commit unknown" with the specific reason
-   Record each hop as evidence. Pin every source read to that SHA and flag
-   any read at a different ref.
-2. Defining library: jar name from logs/stack traces
-   (e.g. usb-dss-authorization-4.1.38.jar), else pom.xml at the deployed SHA
-   (skip org.springframework.*, java.*, javax.*, org.hibernate.*) -> library's
-   GitLab project (Accounts-Core siblings first) -> search at the matching tag.
-   Record "defined in <lib>@<version>".
-3. Use the GitLab project to fill missing catalog repo mappings; cross-check
-   the version suffix against the image tag.
-4. Report rendering: each reviewer finding appears once, under "To confirm".
-   Drop the "No settling check identified" suffix.
-5. Tokens (report only): cached vs uncached input per call and the largest
-   context items.
-
-Proposal first for 1-3. Feature branch only; same push conditions as before.
-Acceptance: replay 1667f753 and ba3436ed in both modes; source reads at
-9fbc51d0, policy classes found in usb-dss-authorization@4.1.38 (or a precise
-blocker), each finding shown once.
+Order:
+a. Implement item 1 (deployed SHA resolver) and item 3 (cross-checks) now.
+b. Then stop and take the target-resolution fix (investigation 8e4b7a3d,
+   find_workloads + environment map). That has priority over the library work.
+c. Item 2 (library) after I give you the source location.
 
 
 
