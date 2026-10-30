@@ -40,6 +40,9 @@ Also:
 
 
 
+No Artifactory or registry tool exists; use Kubernetes and GitLab only.
+Report dedupe and token reporting were done in the previous change — skip
+items 4 and 5 below if already complete.
 
 
 
