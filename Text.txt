@@ -1,21 +1,24 @@
 
-Decisions:
-1. Yes, add search_projects(query, group) and list_tags(project, search) to
-   anchor-gitlab, read-only, bounded output. Leave uncommitted in that repo as
-   before and tell me what to deploy.
-2. Library location: I'll find where dss-parent-pom 4.1.38 and
-   usb-dss-authorization 4.1.x live and tell you. Until then, a miss is a
-   precise blocker, never a fallback to the branch head.
-3. Yes, resolver calls can sit outside the agent's 20-call cap, but they count
-   in the run's total calls and tokens.
-4. Confirmed: no catalog write-back.
 
-Order:
-a. Implement item 1 (deployed SHA resolver) and item 3 (cross-checks) now.
-b. Then stop and take the target-resolution fix (investigation 8e4b7a3d,
-   find_workloads + environment map). That has priority over the library work.
-c. Item 2 (library) after I give you the source location.
+Input: "usb-dss-zero-balance-accnts service in banker uat5 namespace has
+container restart."
 
+What Anchor did: one catalog resolve call, then NEEDS INPUT asking "which
+Kubernetes cluster (name or context) this service is running in". I answered
+[what you typed back]. It then ended with "Target clarification remains
+unresolved ... provide the exact target in a new request". Zero Kubernetes
+calls, no diagnostics.
+
+What it should have resolved, without asking:
+- cluster: digital-obc-k8-pci-uat02
+- namespace: apl-digital-secure-banker-services-uat5
+- deployment: [actual name, e.g. usb-dss-zero-balance-accounts-rel-...]
+- service: [actual service name]
+"banker" + "uat5" maps to that namespace (same one usb-dss-accounts uses), and
+"accnts" is shorthand for "accounts". A search of Deployments in UAT5
+namespaces for "zero-balance" would have found it. Expected behavior: resolve
+by search, state the target and how it was found, then start diagnostics
+(restart count, termination reason, previous logs).
 
 
 
