@@ -1,11 +1,11 @@
-Follow-up to W2-3: the reviewer suggested anchor-datadog:query_events, which
-isn't bound, so the events finding stayed open. Give the reviewer the list of
-bound tools for this run, and tell it to suggest only those. For "read
-workload-scoped events", use anchor-kube events filtered by involvedObject
-(pod/ReplicaSet/Deployment/HPA of the target) and the incident time window.
-Check whether the events filter from my ba3436ed message is merged; if not,
-add it. Replay ba3436ed: the events finding should be revised and
-"Re-check: passed". Full suite green, then commit and push.
+anchor-kube: put everything Anchor now depends on onto one branch,
+feature/demo-anchor-kube: events filter (01d6b1e), find_workloads,
+last_termination, the scoring change, and the namespaces ClusterRole rule
+(separate commit). Run anchor-kube's tests, commit, don't push. Then give me
+one deploy checklist for all services (anchor-main 16610a8, anchor-ui,
+anchor-kube, anchor-gitlab feature/demo-library-discovery) and a command to
+verify each running container's commit.
+
 
 
 
