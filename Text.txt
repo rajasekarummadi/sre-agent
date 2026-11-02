@@ -1,10 +1,18 @@
-anchor-kube: put everything Anchor now depends on onto one branch,
-feature/demo-anchor-kube: events filter (01d6b1e), find_workloads,
-last_termination, the scoring change, and the namespaces ClusterRole rule
-(separate commit). Run anchor-kube's tests, commit, don't push. Then give me
-one deploy checklist for all services (anchor-main 16610a8, anchor-ui,
-anchor-kube, anchor-gitlab feature/demo-library-discovery) and a command to
-verify each running container's commit.
+Fill a draft of anchor-config/config/environment/clusters.yaml (template
+already exists; keep its schema and loader). Read-only only:
+1. kubectl config get-contexts, then for each context: kubectl get ns -o name
+   (namespace names only, nothing else; skip any context that errors and list
+   it).
+2. Per cluster infer: platform (onprem|aks), environments (it1-3, uat1-4,
+   perf, preprod, emp, prod), channels (olb, mobile, partner, banker, branch),
+   pci (true if the name contains pci), status (active).
+3. Namespace patterns -> channel and environment, e.g.
+   apl-digital-secure-banker-services-uat5 -> banker / uat5.
+4. Mark every inferred value with "inferred: true". At the end, list
+   clusters and namespaces you couldn't classify, and any context that isn't
+   one of our 27 clusters (18 on-prem, 9 AKS).
+5. Validate with the loader. Don't commit; I'll review.
+
 
 
 
