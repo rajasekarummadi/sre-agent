@@ -1,19 +1,12 @@
+Follow-up to W2-3: the reviewer suggested anchor-datadog:query_events, which
+isn't bound, so the events finding stayed open. Give the reviewer the list of
+bound tools for this run, and tell it to suggest only those. For "read
+workload-scoped events", use anchor-kube events filtered by involvedObject
+(pod/ReplicaSet/Deployment/HPA of the target) and the incident time window.
+Check whether the events filter from my ba3436ed message is merged; if not,
+add it. Replay ba3436ed: the events finding should be revised and
+"Re-check: passed". Full suite green, then commit and push.
 
-Good. Next:
-1. Fix the 2 failing tests (review-reserve and connection-retry deadline).
-   Tell me if they are test drift or a real regression from 58a6665 or this
-   change. Full suite green, then commit and push on
-   feature/agent-harness-redesign.
-2. Commit the anchor-gitlab discovery tools on a branch in that repo and give
-   me the rebuild/recreate commands.
-3. Library location (not a blocker anymore): dss-parent-pom is at
-   IDC_SERVICING_DIGITAL/architecture-initiatives/dss-parent-pom;
-   usb-dss-authorization is at IDC_SERVICING_DIGITAL/api-common/
-   usb-dss-authorization. List tags and branches in both to find how 4.1.x is
-   tagged (or which authorization version the parent POM pins), then find
-   PolicyNotFoundException / GetPoliciesDataService at the matching ref.
-   Replay 1667f753: classes found at the matching library ref, or a precise
-   blocker naming what was tried.
 
 
 
