@@ -1,24 +1,10 @@
 
-
-Input: "usb-dss-zero-balance-accnts service in banker uat5 namespace has
-container restart."
-
-What Anchor did: one catalog resolve call, then NEEDS INPUT asking "which
-Kubernetes cluster (name or context) this service is running in". I answered
-[what you typed back]. It then ended with "Target clarification remains
-unresolved ... provide the exact target in a new request". Zero Kubernetes
-calls, no diagnostics.
-
-What it should have resolved, without asking:
-- cluster: digital-obc-k8-pci-uat02
-- namespace: apl-digital-secure-banker-services-uat5
-- deployment: [actual name, e.g. usb-dss-zero-balance-accounts-rel-...]
-- service: [actual service name]
-"banker" + "uat5" maps to that namespace (same one usb-dss-accounts uses), and
-"accnts" is shorthand for "accounts". A search of Deployments in UAT5
-namespaces for "zero-balance" would have found it. Expected behavior: resolve
-by search, state the target and how it was found, then start diagnostics
-(restart count, termination reason, previous logs).
+Yes, align chat lookups with week 1: exactly one candidate proceeds without
+asking and states the target and how it was found ("resolved by catalog:
+uat5 + banker"). Keep the confirm step only when the match came from a fuzzy
+or abbreviated name with score below 0.95, or a sibling name was close.
+Add a replay: "Are the usb-dss-accounts pods healthy in banker uat5?" ->
+lookup with zero questions. Sonnet is fine for this.
 
 
 
