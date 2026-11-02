@@ -1,10 +1,20 @@
 
-Yes, align chat lookups with week 1: exactly one candidate proceeds without
-asking and states the target and how it was found ("resolved by catalog:
-uat5 + banker"). Keep the confirm step only when the match came from a fuzzy
-or abbreviated name with score below 0.95, or a sibling name was close.
-Add a replay: "Are the usb-dss-accounts pods healthy in banker uat5?" ->
-lookup with zero questions. Sonnet is fine for this.
+Good. Next:
+1. Fix the 2 failing tests (review-reserve and connection-retry deadline).
+   Tell me if they are test drift or a real regression from 58a6665 or this
+   change. Full suite green, then commit and push on
+   feature/agent-harness-redesign.
+2. Commit the anchor-gitlab discovery tools on a branch in that repo and give
+   me the rebuild/recreate commands.
+3. Library location (not a blocker anymore): dss-parent-pom is at
+   IDC_SERVICING_DIGITAL/architecture-initiatives/dss-parent-pom;
+   usb-dss-authorization is at IDC_SERVICING_DIGITAL/api-common/
+   usb-dss-authorization. List tags and branches in both to find how 4.1.x is
+   tagged (or which authorization version the parent POM pins), then find
+   PolicyNotFoundException / GetPoliciesDataService at the matching ref.
+   Replay 1667f753: classes found at the matching library ref, or a precise
+   blocker naming what was tried.
+
 
 
 
