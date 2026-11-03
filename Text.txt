@@ -1,24 +1,27 @@
-Live regression of 45a7ca8e (thread fb623cad-b5ed-4846-aea8-ce8e49557686):
-1. "usb-dss-maintain-entitlement-delegate service status in consumer preprod
-   obc namespace." -> lookup resolved digital-obc-k8-pci-prod01 /
-   apl-secure-digital-services-preprod1 and offered Investigate.
-2. "What caused the restarts?" -> routed investigate / failure_investigation
-   0.95 ("already confirmed target"), but the investigation said
-   "Investigation started without a confirmed lookup target" and asked
-   NEEDS INPUT "What service name, hostname, URL, IP, namespace, or
-   deployment is involved?"
 
-First report, no changes: what thread state the lookup wrote, which
-resolution path it used, and why the investigation seed was empty. Also
-explain why the routing and handoff replays didn't catch this.
-Then fix: every successful lookup, whatever path resolved it (catalog,
-clusters.yaml, channel or site narrowing, explicit target), stores the
-confirmed target in thread state. A typed follow-up and the Investigate
-button both start with that target and never ask for it again.
-Add a replay of this exact thread on the same resolution path, both modes.
-Add scripts/smoke_live.sh that runs scenario 1 against the deployed stack,
-read-only, and fails if any question is asked. Full suite green, commit,
-push, build the image.
+
+Investigation 85ae0455 (from the Investigate button after a lookup showing
+0/2 ready, 626/678 restarts, last exit code 1) ran intake only: 1 model call,
+one kubernetes workload diagnostics read, then "Investigation complete",
+title "Live API workload status", 0 hypotheses, confidence not established.
+The native agent loop and the crashloop skill never ran.
+
+1. Report first: why intake ended the run (which fast path / family), and
+   what question and family the Investigate button passed.
+2. The Investigate / Dig deeper button must pass the escalation reason as the
+   investigation question (e.g. "Why are usb-dss-maintain-entitlement-
+   delegate pods not ready: 626/678 restarts, last exit code 1?"), family
+   failure_investigation, plus the confirmed target.
+3. An investigation started from an escalation, or any investigation whose
+   evidence shows not-ready pods, restarts or a non-zero exit code, must not
+   finish on a status fast path: it runs the agent loop with the crashloop
+   skill (termination reason, previous-container logs, workload events,
+   deployed commit and source).
+4. Completion check: a failure investigation cannot be "complete" with zero
+   hypotheses and no agent turns.
+5. Same behaviour for a typed follow-up ("What caused the restarts?").
+6. Replay this exact flow (button and typed) in both modes, and add it to
+   scripts/smoke_live.sh. Full suite green, commit, push, build the image.
 
 
 
