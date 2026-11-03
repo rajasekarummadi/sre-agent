@@ -1,22 +1,26 @@
-Answers:
-- "consumer" = [apl-secure-digital-services namespaces / OLB + mobile].
-  Add it as a channel alias in clusters.yaml.
-- cbc and obc are [two sites of the same env]: for status, check both and
-  report side by side; don't ask which one.
+Live regression of 45a7ca8e (thread fb623cad-b5ed-4846-aea8-ce8e49557686):
+1. "usb-dss-maintain-entitlement-delegate service status in consumer preprod
+   obc namespace." -> lookup resolved digital-obc-k8-pci-prod01 /
+   apl-secure-digital-services-preprod1 and offered Investigate.
+2. "What caused the restarts?" -> routed investigate / failure_investigation
+   0.95 ("already confirmed target"), but the investigation said
+   "Investigation started without a confirmed lookup target" and asked
+   NEEDS INPUT "What service name, hostname, URL, IP, namespace, or
+   deployment is involved?"
 
-Still broken (live thread): Anchor listed 6 cluster/namespace pairs as text;
-I replied with one of them exactly ("digital-obc-k8-pci-prod01 /
-apl-secure-digital-services-preprod1") and it asked the identical question
-again.
-1. Candidates must be clickable buttons, not text.
-2. A reply that matches a listed candidate, or an explicit service +
-   namespace + cluster, proceeds: verify with one read-only Kubernetes read
-   and continue. If the cluster is outside Anchor's access scope, say so.
-3. Never repeat the same question in a thread.
-4. The chat status lookup must read clusters.yaml too, not only the
-   investigation path.
-5. Replay this exact thread in both modes, including picking a candidate.
-Full suite green, commit, push, build the image.
+First report, no changes: what thread state the lookup wrote, which
+resolution path it used, and why the investigation seed was empty. Also
+explain why the routing and handoff replays didn't catch this.
+Then fix: every successful lookup, whatever path resolved it (catalog,
+clusters.yaml, channel or site narrowing, explicit target), stores the
+confirmed target in thread state. A typed follow-up and the Investigate
+button both start with that target and never ask for it again.
+Add a replay of this exact thread on the same resolution path, both modes.
+Add scripts/smoke_live.sh that runs scenario 1 against the deployed stack,
+read-only, and fails if any question is asked. Full suite green, commit,
+push, build the image.
+
+
 
 
 
