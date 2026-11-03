@@ -1,17 +1,23 @@
+Answers:
+- "consumer" = [apl-secure-digital-services namespaces / OLB + mobile].
+  Add it as a channel alias in clusters.yaml.
+- cbc and obc are [two sites of the same env]: for status, check both and
+  report side by side; don't ask which one.
 
-Live bug (thread in screenshot): usb-dss-shared-access-userdetails is not in
-the catalog. Anchor asked "Which exact service, cluster and namespace...".
-I replied "ServiceName: usb-dss-shared-access-userdetails, Namespace:
-apl-secure-digital-services-preprod1, cluster: digital-obc-k8-pci-prod01"
-and it asked the identical question again.
-1. When the user gives an explicit service + namespace + cluster, skip the
-   catalog: verify it with one read-only Kubernetes read (deployment or pods
-   in that namespace) and proceed. If the cluster is outside Anchor's access
-   scope, say that plainly instead of asking.
-2. Never repeat the same question in a thread; if the answer doesn't resolve
-   it, say what was tried and what's missing.
-3. Replay this exact thread, both modes. Full suite green, commit, push,
-   build the image.
+Still broken (live thread): Anchor listed 6 cluster/namespace pairs as text;
+I replied with one of them exactly ("digital-obc-k8-pci-prod01 /
+apl-secure-digital-services-preprod1") and it asked the identical question
+again.
+1. Candidates must be clickable buttons, not text.
+2. A reply that matches a listed candidate, or an explicit service +
+   namespace + cluster, proceeds: verify with one read-only Kubernetes read
+   and continue. If the cluster is outside Anchor's access scope, say so.
+3. Never repeat the same question in a thread.
+4. The chat status lookup must read clusters.yaml too, not only the
+   investigation path.
+5. Replay this exact thread in both modes, including picking a candidate.
+Full suite green, commit, push, build the image.
+
 
 
 
