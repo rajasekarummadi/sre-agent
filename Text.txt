@@ -1,17 +1,17 @@
-Fill a draft of anchor-config/config/environment/clusters.yaml (template
-already exists; keep its schema and loader). Read-only only:
-1. kubectl config get-contexts, then for each context: kubectl get ns -o name
-   (namespace names only, nothing else; skip any context that errors and list
-   it).
-2. Per cluster infer: platform (onprem|aks), environments (it1-3, uat1-4,
-   perf, preprod, emp, prod), channels (olb, mobile, partner, banker, branch),
-   pci (true if the name contains pci), status (active).
-3. Namespace patterns -> channel and environment, e.g.
-   apl-digital-secure-banker-services-uat5 -> banker / uat5.
-4. Mark every inferred value with "inferred: true". At the end, list
-   clusters and namespaces you couldn't classify, and any context that isn't
-   one of our 27 clusters (18 on-prem, 9 AKS).
-5. Validate with the loader. Don't commit; I'll review.
+
+Live bug (thread in screenshot): usb-dss-shared-access-userdetails is not in
+the catalog. Anchor asked "Which exact service, cluster and namespace...".
+I replied "ServiceName: usb-dss-shared-access-userdetails, Namespace:
+apl-secure-digital-services-preprod1, cluster: digital-obc-k8-pci-prod01"
+and it asked the identical question again.
+1. When the user gives an explicit service + namespace + cluster, skip the
+   catalog: verify it with one read-only Kubernetes read (deployment or pods
+   in that namespace) and proceed. If the cluster is outside Anchor's access
+   scope, say that plainly instead of asking.
+2. Never repeat the same question in a thread; if the answer doesn't resolve
+   it, say what was tried and what's missing.
+3. Replay this exact thread, both modes. Full suite green, commit, push,
+   build the image.
 
 
 
