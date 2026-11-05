@@ -21,9 +21,17 @@ already exist; the failures below are routing only. Recent live failures, all th
 - Investigate button ending on a status fast path (85ae0455)
 
 Target design:
-1. Router decides depth only: quick (small budget, ~8 tool calls / 60 s) or
-   investigation (current budget), plus family as a skill hint. It never
-   blocks or asks.
+1. Mode is chosen in the UI, not by the router: a selector next to
+   Environment with Ask (default) / Investigate / Triage. ServiceNow
+   webhooks use Triage. Remove automatic route selection; keep the model
+   only for extracting identifiers and a skill hint.
+   - Ask: small budget (~8 tool calls, 60 s); direct answer with evidence;
+     offers "Investigate this" when it finds a real failure.
+   - Investigate: full budget; RCA report with reviewer; a simple factual
+     question is answered and stops.
+   - Triage: Investigate plus the incident's context (number or webhook).
+   All modes use the same agent loop with all bound tools; no topic-specific
+   handlers.
 2. Every question runs the native agent loop with all bound read-only tools.
    No per-family scripted lookup paths. No behaviour that differs by source
    (incident/webhook/chat/button/follow-up) except the starting context.
@@ -45,7 +53,9 @@ Delivery in slices, stop and report after each:
 A. Report only: every scripted path, gate, fixed question, source-specific
    branch, fast path and flag today; which read-only tools exist per family
    (DNS, TLS, VirtualService/DestinationRule/Gateway, pipelines, config,
-   ownership, logs, events); what the new design removes.
+   ownership, logs, events); what the new design removes. Also list
+   everything that depends on the router's route decision today, since the
+   UI mode replaces it.
 B. Safety net first: golden set (replay + smoke_live.sh step) for every flow
    that works today: status card, crashloop investigation, Investigate
    button, typed follow-up, every target-resolution path, side questions,
@@ -53,9 +63,13 @@ B. Safety net first: golden set (replay + smoke_live.sh step) for every flow
    questions across all families and sources, with expected behaviour
    (answered / investigated / clear missing-capability message).
    Record the current results as the baseline in docs/coverage-matrix.md.
+   Tag each broad-set question with the mode an engineer would pick, and
+   include wrong-mode cases (a "why is it broken" question in Ask, a simple
+   fact in Investigate) to test the hand-offs.
 C. Implement the design behind ONE temporary flag (ANCHOR_UNIFIED_PATH,
    default off), on a branch off the current green commit; tag the current
-   image as rollback. Golden set must pass with the flag on and off.
+   image as rollback. Golden set must pass with the flag on and off. Update the Architecture tab
+   to show the mode selector instead of the router.
 D. Run the broad set with the flag on; update the coverage matrix with
    before/after and a ranked list of missing tools/skills.
 E. After I approve: flag on by default; once green for a week, delete the
@@ -192,6 +206,8 @@ uncached), and anything wrong on screen. No code changes in this prompt.
 
 **W2-1: router and escalation.**
 
+Done. Superseded by U1: the mode is now chosen in the UI, so don't resend this prompt.
+
 ```text
 Demo plan, week 2: routing and interactivity.
 1. Router: keep fixed rules for ServiceNow incidents and webhooks, a pending
@@ -275,7 +291,8 @@ classes should be found at the matching tag and recorded as
 ```text
 Demo plan, week 3: make the harness visible in the console. UI and read-only
 changes only; no loop changes.
-1. Architecture tab: a diagram of the native loop - intake -> router ->
+1. Architecture tab: a diagram of the native loop - intake -> mode (Ask / Investigate /
+   Triage) ->
    agent <-> tools -> end-of-run checks -> reviewer -> revision -> report -
    with what each part enforces (read-only allowlist, budgets, evidence IDs,
    status rule). During a live run, highlight the current stage.
@@ -315,13 +332,13 @@ established. Export both as replay bundles.
 Model comparison for the demo:
 1. evals/parity/: 20 cases from our runs and the demo scenarios (8e4b7a3d,
    45a7ca8e, 1667f753, ba3436ed, 33014af6, plus status, deploy and restart
-   questions with shorthand names and follow-ups). Fields: expected_route,
+   questions with shorthand names and follow-ups). Fields: expected_mode,
    expected_target, must_inspect, expected_answer (I'll review).
-2. Scoring: target_found, questions_asked, dead_end, route_correct,
+2. Scoring: target_found, questions_asked, dead_end, mode_handled (right mode or correct hand-off),
    deployed_sha_used, answer score (LLM judge against expected_answer),
    turns, tokens (cached and uncached), time.
 3. Model override for the native agent node only (models.yaml override per
-   run); router, intake and report stay on GPT-5.1. Hard caps per run and per
+   run); intake and report stay on GPT-5.1. Hard caps per run and per
    batch; stop when reached. I'll provide the gateway endpoint and key at run
    time; never store them in the repo or logs.
 4. Run all 20 on GPT-5.1 now and write evals/reports/parity-gpt51.md. I'll
