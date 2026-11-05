@@ -1,18 +1,27 @@
+If the UI Environment selector has a value, run from a probe cluster in that
+environment. Otherwise run from a configured default probe cluster within the
+user's authorized scope (prefer a non-PCI lower environment). Always label
+the result with its vantage point (cluster, environment). Only if the user
+has no authorized probe cluster, use ask_user with environment buttons.
 
 
-Yes, go ahead with the fix as proposed. Also, because this is the same
-class of bug we've hit repeatedly:
-1. Find every remaining branch that behaves differently by source
-   (incident / webhook / prompt), e.g. `state.get("source") in {...}`. List
-   each with what it does; make chat messages get the same paths unless
-   there's a stated reason not to.
-2. The router's family must decide the path for every family, not only
-   deploy_ci: list each family, the path it takes today, and where code
-   overrides it before the agent loop. Fix overrides that aren't needed.
-3. Tests: every family x every source (incident, webhook, chat, typed
-   follow-up, button), both modes. A table of the results in the status doc.
-Then the full suite, commit, push, image build, and add a pipeline-link chat
-message to scripts/smoke_live.sh.
+
+Option 1: all bound read-only tools always, in one fixed order (cache-
+friendly); skills are guidance only.
+Also:
+- Fix every prompt/skill that names a missing tool (kubernetes_route_diagnosis,
+  anything anchor-datadog) and add a startup check that fails on unknown
+  tool names. List missing tools (ConfigMap, GitLab commit/MR, OpenShift
+  Route) as gaps in the coverage matrix; don't build them in U1.
+- Mode switch mid-thread (e.g. Ask -> Investigate) starts from the thread
+  context: confirmed target, prior findings as evidence IDs with bounded
+  summaries, conversation so far. Never re-ask what the thread knows.
+  Re-read time-sensitive evidence live and show the age of reused evidence.
+  A new service/environment resolves fresh. Triage asks once for an incident
+  number if none. A switch during a running request finishes or cancels it
+  cleanly. Golden tests: Ask status -> Investigate; Ask DNS -> Investigate;
+  mid-run switch.
+
 
 
 
