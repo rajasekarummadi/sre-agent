@@ -1,27 +1,19 @@
 
 
-Investigation 85ae0455 (from the Investigate button after a lookup showing
-0/2 ready, 626/678 restarts, last exit code 1) ran intake only: 1 model call,
-one kubernetes workload diagnostics read, then "Investigation complete",
-title "Live API workload status", 0 hypotheses, confidence not established.
-The native agent loop and the crashloop skill never ran.
+Yes, go ahead with the fix as proposed. Also, because this is the same
+class of bug we've hit repeatedly:
+1. Find every remaining branch that behaves differently by source
+   (incident / webhook / prompt), e.g. `state.get("source") in {...}`. List
+   each with what it does; make chat messages get the same paths unless
+   there's a stated reason not to.
+2. The router's family must decide the path for every family, not only
+   deploy_ci: list each family, the path it takes today, and where code
+   overrides it before the agent loop. Fix overrides that aren't needed.
+3. Tests: every family x every source (incident, webhook, chat, typed
+   follow-up, button), both modes. A table of the results in the status doc.
+Then the full suite, commit, push, image build, and add a pipeline-link chat
+message to scripts/smoke_live.sh.
 
-1. Report first: why intake ended the run (which fast path / family), and
-   what question and family the Investigate button passed.
-2. The Investigate / Dig deeper button must pass the escalation reason as the
-   investigation question (e.g. "Why are usb-dss-maintain-entitlement-
-   delegate pods not ready: 626/678 restarts, last exit code 1?"), family
-   failure_investigation, plus the confirmed target.
-3. An investigation started from an escalation, or any investigation whose
-   evidence shows not-ready pods, restarts or a non-zero exit code, must not
-   finish on a status fast path: it runs the agent loop with the crashloop
-   skill (termination reason, previous-container logs, workload events,
-   deployed commit and source).
-4. Completion check: a failure investigation cannot be "complete" with zero
-   hypotheses and no agent turns.
-5. Same behaviour for a typed follow-up ("What caused the restarts?").
-6. Replay this exact flow (button and typed) in both modes, and add it to
-   scripts/smoke_live.sh. Full suite green, commit, push, build the image.
 
 
 
