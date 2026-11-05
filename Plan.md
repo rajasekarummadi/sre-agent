@@ -4,6 +4,38 @@ Oct 30, 2026 · @Rajasekar Ummadi
 
 Demo Anchor to management on Dec 1, 2026: an agent harness of its own, shown live, with the numbers for a frontier-model request. Four weeks of scoped work get it there; anything not on this plan waits until after the demo. Prompts to paste are in Copilot prompts, and the run of show is in Demo script.
 
+## Revised plan (Nov 4): demo for the CIO
+
+The audience is a CIO responsible for over 5,000 engineers, so the bar is breadth and reliability on any question, not four polished scenarios. The priority is now one general path for every question (prompt U1 on the Copilot prompts tab), protected by a golden test set, before the remaining demo work.
+
+| Dates | Work | Owner |
+| --- | --- | --- |
+| Nov 5–6 | U1 slices A–B: path report, golden set, 50-question baseline | You (Opus) |
+| Nov 5–6 | Correct clusters.yaml; write 20 real developer questions for the broad set | You |
+| Nov 9–12 | U1 slice C: unified path behind ANCHOR\_UNIFIED\_PATH; U2 verifier latency; U3 cost in dollars | You (Opus, then Sonnet) |
+| Nov 12 | U1 slice D: coverage before and after; confirm the existing DNS, TLS and Istio routing tools are bound and used | You and teammates |
+| Nov 13 | Go/no-go against the bar below | You |
+| Nov 16–20 | U1 slice E (flag on by default); W1-2 recordings; W3-2 replay mode; W3-3 parity and model comparison | You and teammates |
+| Nov 23–25 | W4-1 reliability; dry run Nov 24; freeze Nov 25 (flag and old paths deleted if green since Nov 16) | You |
+| Dec 1 | Demo | You |
+
+**Go/no-go bar (Nov 13)**
+
+- [ ] Golden set 100% green, live and replay
+- [ ] Broad question set: at least 85% answered correctly, or with a clear missing-capability message
+- [ ] Zero raw errors, fixed questions, dead ends or repeated questions in the broad set
+- [ ] Median quick answer under 60 s; investigation under 5 min
+
+If the bar isn't met on Nov 13, move the demo by a week rather than show failures to the CIO.
+
+**What a CIO will look for**
+
+- Breadth: any engineer's question across 27 clusters, not a scripted demo
+- Trust: cited evidence, read-only by design, honest about what it can't check
+- Economics: cost per RCA in dollars against engineer hours, scaled to 5,000 engineers
+- Proof: coverage matrix and model comparison, measured on our own questions
+- Direction: investigation before the page, daily health sweep, incident memory
+
 ## Key dates
 
 The demo is on Tuesday, December 1, after Thanksgiving week, leaving Monday, November 30 as a buffer. Friday, November 13 is the go/no-go point for keeping that date.

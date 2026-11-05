@@ -2,6 +2,99 @@
 
 Paste these in order, one at a time, in the owner's Copilot chat (Team section on the Plan tab), on a branch off `feature/agent-harness-redesign`. Wait for the report, tick the checks under each prompt, then send the next. Use Opus for W1-1, W2-1, W2-3, W3-1 and W3-2, and Sonnet for the rest.
 
+## Priority now (Nov 4)
+
+**U1: one general path for every question.** Opus. Send first; Copilot stops after each slice for review.
+
+```text
+Design change: one general path for every question, so new question types
+need tools/skills, not code paths. The tools for DNS, TLS and Istio routing
+already exist; the failures below are routing only. Recent live failures, all the same cause
+(scripted per-family lookup paths and gates before the agent loop):
+- DNS: "IP address from this hostname, rancher-test1.aws.bank-dns.com"
+- TLS: "Is certificate valid on this domain? rancher-test1.aws.bank-dns.com"
+- Exposure: "Which dns name should i use to access usb-dss-accounts api in
+  uat5 banker env?"
+- Routing: "How's istio routing rules for usb-dss-accounts api in uat5 banker
+  env?" -> "The read-only request could not be completed..."
+- CI: pipeline link in chat ignored (source-specific branch)
+- Investigate button ending on a status fast path (85ae0455)
+
+Target design:
+1. Router decides depth only: quick (small budget, ~8 tool calls / 60 s) or
+   investigation (current budget), plus family as a skill hint. It never
+   blocks or asks.
+2. Every question runs the native agent loop with all bound read-only tools.
+   No per-family scripted lookup paths. No behaviour that differs by source
+   (incident/webhook/chat/button/follow-up) except the starting context.
+3. Target and environment resolution are tools (catalog, clusters.yaml,
+   find_workloads, live verify), called by the model when needed. A catalog
+   snapshot match is verified with one live read, not by asking the user.
+4. One ask_user tool, buttons only, used only when a tool input is missing
+   and can't be found; the same question is never asked twice in a thread.
+   Remove all fixed questions (e.g. "UAT, dev, test, or production?").
+5. Fast paths (pod status card) are accelerators only: if they can't fully
+   answer, they hand off to the loop with what they found.
+6. If no bound tool can answer, say which capability is missing.
+7. Plain-language errors only; never raw exceptions; lookups never use RCA
+   wording.
+8. Thread context (confirmed target, findings) is one object every path reads
+   and writes.
+
+Delivery in slices, stop and report after each:
+A. Report only: every scripted path, gate, fixed question, source-specific
+   branch, fast path and flag today; which read-only tools exist per family
+   (DNS, TLS, VirtualService/DestinationRule/Gateway, pipelines, config,
+   ownership, logs, events); what the new design removes.
+B. Safety net first: golden set (replay + smoke_live.sh step) for every flow
+   that works today: status card, crashloop investigation, Investigate
+   button, typed follow-up, every target-resolution path, side questions,
+   pipeline link. Plus a broad question set: ~50 realistic developer and SRE
+   questions across all families and sources, with expected behaviour
+   (answered / investigated / clear missing-capability message).
+   Record the current results as the baseline in docs/coverage-matrix.md.
+C. Implement the design behind ONE temporary flag (ANCHOR_UNIFIED_PATH,
+   default off), on a branch off the current green commit; tag the current
+   image as rollback. Golden set must pass with the flag on and off.
+D. Run the broad set with the flag on; update the coverage matrix with
+   before/after and a ranked list of missing tools/skills.
+E. After I approve: flag on by default; once green for a week, delete the
+   flag and the old scripted paths. List other flags that can be removed.
+Both loop modes throughout. Full suite green before every push.
+```
+
+- [ ] A: report reviewed
+- [ ] B: golden set and 50-question baseline in docs/coverage-matrix.md
+- [ ] C: golden set green with the flag on and off
+- [ ] D: coverage before/after; missing tools ranked
+- [ ] E: flag on by default; flag and old paths deleted after a green week
+
+**U2: verifier latency.** Sonnet. Any time; independent of U1.
+
+```text
+The verifier at high effort hits the 120s local deadline on most runs
+(node=verifier kind=local_deadline latency_ms=120006 effort=high
+output_tokens=0 action=retry_degraded), so every investigation loses 2 min.
+1. From recent runs: how often does high time out, and does the medium retry
+   succeed? Latency per attempt.
+2. Compare medium vs high on ba3436ed, 33014af6, 6907c55b, 1667f753, 3 repeats
+   each: issues found, verdicts, latency.
+3. If medium catches the same issues: medium becomes the verifier default.
+4. Either way: verifier input = claims plus excerpts of cited evidence;
+   max_output_tokens about 8k.
+5. Report per-investigation time before and after.
+```
+
+**U3: cost in dollars.** Sonnet. Any time.
+
+```text
+Add an estimated cost per investigation in dollars: prices per model in
+models.yaml (GPT-5.1: $1.25/M input, $0.125/M cached input, $10/M output;
+I'll confirm our Azure rates), from the per-call usage already logged. Show it
+in the token panel and on the Scorecard (median cost and time per
+investigation). Label it "estimate". No other changes.
+```
+
 ## Now
 
 **N1: decisions, status and the deployed-commit resolver.** Send when Copilot finishes its current task.
