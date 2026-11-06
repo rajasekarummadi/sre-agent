@@ -4,23 +4,27 @@ user's authorized scope (prefer a non-PCI lower environment). Always label
 the result with its vantage point (cluster, environment). Only if the user
 has no authorized probe cluster, use ask_user with environment buttons.
 
+Yes, rerun on 583fb33, but first fix these in one commit with tests:
+1. Ask budget: 12 tool calls / 120 s. If the budget runs out after
+   successful reads, answer from what was read instead of failing.
+2. catalog_lookup: find why the median is 19 s vs 0.4 s for catalog_resolve;
+   use the fast path or cache, and fall back to catalog_resolve on timeout.
+3. Clusters: resolve environment -> cluster from clusters.yaml (I'm filling
+   it today); validate cluster names against it; never pass an environment
+   name as a cluster name.
+4. Namespace: pick from clusters.yaml namespace patterns and verify with a
+   read (e.g. secure-banker vs banker); never guess.
+5. No environment given: never default to prod. Use the default probe
+   environment (non-prod) and say which one was used.
+6. GitLab project for a service: derive from the running image's
+   org.opencontainers.image.url label (job URL contains the project path),
+   else search_projects; ask only if both fail.
+7. anchor-kube TLS probe JSON crash: fix and add a test.
+8. Scoring: report two pass rates: strict, and excluding answers that
+   clearly say a permission or capability is missing. List the permission
+   gaps (resources, namespaces) so I can request read access.
+Then give me the exact deploy command; I'll deploy and tell you to rerun.
 
-
-Option 1: all bound read-only tools always, in one fixed order (cache-
-friendly); skills are guidance only.
-Also:
-- Fix every prompt/skill that names a missing tool (kubernetes_route_diagnosis,
-  anything anchor-datadog) and add a startup check that fails on unknown
-  tool names. List missing tools (ConfigMap, GitLab commit/MR, OpenShift
-  Route) as gaps in the coverage matrix; don't build them in U1.
-- Mode switch mid-thread (e.g. Ask -> Investigate) starts from the thread
-  context: confirmed target, prior findings as evidence IDs with bounded
-  summaries, conversation so far. Never re-ask what the thread knows.
-  Re-read time-sensitive evidence live and show the age of reused evidence.
-  A new service/environment resolves fresh. Triage asks once for an incident
-  number if none. A switch during a running request finishes or cancels it
-  cleanly. Golden tests: Ask status -> Investigate; Ask DNS -> Investigate;
-  mid-run switch.
 
 
 
