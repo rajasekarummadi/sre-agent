@@ -1,28 +1,22 @@
 
 
+Before rerun 3, confirm two things in a short answer. If either is false, fix it first with a test and give me the new deploy command.
+1. A namespace whose environment can't be parsed is treated as prod and denied, on every cluster.
+2. The cluster-wide last-resort search never runs on a cluster that hosts any prod namespace, the *-prod01 clusters included. A cluster-wide list reads prod objects even if they're filtered afterwards.
+Keep the *-prod-* glob in K8S_DENIED_NAMESPACES as a backstop; don't remove or narrow it without asking me.
 
-Before I deploy a789c5a: two corrections from me, plus fixes for the rows still open. Put them in the same build so rerun 3 measures everything once.
+After I say deployed, run rerun 3 as agreed.
 
-Corrections:
-1. Discovery is catalog-first, and no cluster-scoped call is required anywhere. Our access may be namespace-level on any cluster, on-prem or AKS.
-   - The catalog gives service -> environment -> cluster + namespace.
-   - Verify with a namespace-scoped read (the Deployment in that namespace). That read is the evidence.
-   - Only if the catalog has no entry or the read says not found: search the other namespaces the catalog lists for that environment's clusters, namespace-scoped, in parallel, and say the catalog entry is missing or stale.
-   - Keep the existing cluster-wide search only as a last resort on clusters where a cached access check says it's allowed. Never depend on it. A denied cluster-scoped call is expected, not a permission gap.
-   - For questions about cluster-scoped objects (nodes, persistent volumes, cluster issuers), say what couldn't be checked and why.
-   - Report: for every service in questions.yaml, does the catalog give cluster + namespace for each environment asked about? List the gaps.
-2. Environment names: on-prem namespaces end in uat1 or uat01; Azure uses UAT-001. Use one shared normalizer everywhere (find_workloads, clusters.yaml, probe guard, catalog, UI): ignore case and separators, compare the number as an integer. Tests: uat1 = uat01 = uat-001 = UAT-001; it3 = it-003 = IT03; uat1 never matches uat10 or uat11; prod never matches preprod and preprod never matches prod. The production guard must use the parsed environment, never a substring.
+Investigate timing fixes: approved for after the rerun 3 report, with these changes:
+- A turn without a tool call is allowed for one planning turn at the start and for the final answer. Otherwise, push the model to batch several reads in one turn rather than forcing exactly one read per turn.
+- Merge evidence evaluation into the reviewer, but keep the reviewer a separate step that can send findings back. A visible revision round is in the demo script.
+- Show the completion checks before submit: yes.
+- Skip the revision round only when time is short, listing open points as "not verified": yes.
+Measure on the Investigate questions before and after, and report the median time.
 
-Open rows:
-3. Asking before looking keeps coming back (5 rows across two runs, e.g. "Which Kubernetes context?"). Enforce it inside the ask_user tool, in every mode: any question about where something runs (cluster, context, namespace, environment, project) is refused unless the lookups that could answer it were tried this turn.
-4. The mirror rule: Anchor can't say something is unavailable, not visible, not found or can't be read (flow-typed-followup's "can't read historical restarts", dns-resolver-config) unless a tool result this turn said so. Otherwise it tries the lookup or offers Investigate.
-5. wrong-why-broken-in-ask: in Ask, a "why is X broken" question that needs more than a quick read offers the Investigate hand-off with the target carried over.
-6. Istio rows: the Istio skill uses the host search first (hostname -> Gateway -> VirtualService -> Service). For TLS, use the Gateway's credentialName, cert-manager Certificate status if present, and the TLS probe. Never read Secret data. On AKS the Gateway may be in a namespace Anchor can't read: say so and use the probe.
-7. config-mounted-secrets: check that the workload projection includes volumes, envFrom and env valueFrom secret/configMap references (names only). Compare with the raw spec and tell me whether the answer was wrong.
-8. ownership-team: when the catalog has no owner, say so and fall back to GitLab CODEOWNERS or project maintainers, with the source shown.
-9. The 3 Investigate runs over budget: give me a time breakdown for each (model, tools, verifier, retries) and propose a fix. Don't raise the budget.
+Also list which services in questions.yaml have a CODEOWNERS file, since the catalog owner column is empty everywhere.
 
-Each fix: a test that fails without it, full suite green, local commit. Then give me the exact deploy command, and run rerun 3 when I say deployed: read-only, one question at a time, $15 cap, compared with rerun 2.
+
 
 
 
