@@ -1,20 +1,11 @@
 
 
-Before rerun 3, confirm two things in a short answer. If either is false, fix it first with a test and give me the new deploy command.
-1. A namespace whose environment can't be parsed is treated as prod and denied, on every cluster.
-2. The cluster-wide last-resort search never runs on a cluster that hosts any prod namespace, the *-prod01 clusters included. A cluster-wide list reads prod objects even if they're filtered afterwards.
-Keep the *-prod-* glob in K8S_DENIED_NAMESPACES as a backstop; don't remove or narrow it without asking me.
+Option 1, narrowed. Deny unparseable namespaces by default. K8S_INFRA_NAMESPACES allows only these reads, and only on clusters that host no prod namespace:
+- istio-system / istio-ingress: Gateway, VirtualService, DestinationRule, Service
+- kube-system: the CoreDNS Service and ConfigMap only
+- cert-manager: Certificate and Issuer status
+Never Secrets. Route the kube-system read through the policy. On clusters that host a prod namespace, answer from the TLS probe and say what couldn't be read. Tests: allowed read, same namespace but a kind not on the list (denied), and a prod-hosting cluster (denied).
 
-After I say deployed, run rerun 3 as agreed.
-
-Investigate timing fixes: approved for after the rerun 3 report, with these changes:
-- A turn without a tool call is allowed for one planning turn at the start and for the final answer. Otherwise, push the model to batch several reads in one turn rather than forcing exactly one read per turn.
-- Merge evidence evaluation into the reviewer, but keep the reviewer a separate step that can send findings back. A visible revision round is in the demo script.
-- Show the completion checks before submit: yes.
-- Skip the revision round only when time is short, listing open points as "not verified": yes.
-Measure on the Investigate questions before and after, and report the median time.
-
-Also list which services in questions.yaml have a CODEOWNERS file, since the catalog owner column is empty everywhere.
 
 
 
