@@ -1,10 +1,12 @@
 
+Good. Two more before rerun 3, same build:
+1. Gate every cluster-scoped read the same way as cluster-wide lists: nodes (cluster_health) and anything else not in a namespace (persistent volumes, storage classes, cluster issuers, CRDs). Refused before any API call on a prod-hosting cluster, reported as "by design". List every cluster-scoped read you found.
+2. Yes, add cert-manager Certificate status (Ready, notAfter, renewal time, issuer) to the istio-system allowlist on clusters that host no prod namespace. Status only, never the Secret.
+Tests for both, full suites green, then the deploy command. Rerun 3 after I say deployed.
 
-Option 1, narrowed. Deny unparseable namespaces by default. K8S_INFRA_NAMESPACES allows only these reads, and only on clusters that host no prod namespace:
-- istio-system / istio-ingress: Gateway, VirtualService, DestinationRule, Service
-- kube-system: the CoreDNS Service and ConfigMap only
-- cert-manager: Certificate and Issuer status
-Never Secrets. Route the kube-system read through the policy. On clusters that host a prod namespace, answer from the TLS probe and say what couldn't be read. Tests: allowed read, same namespace but a kind not on the list (denied), and a prod-hosting cluster (denied).
+Ownership: no new tool now. After the rerun 3 report, tell me whether anchor-now can read the ServiceNow support group for a service, and what a read-only GitLab maintainers lookup would take. I'll pick one.
+
+
 
 
 
