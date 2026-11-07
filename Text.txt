@@ -1,19 +1,28 @@
 
 
-Do 1, 2 and 4 with the changes below, and 3 as rewritten. Skip 5: rerun all 65 after the fixes.
 
-1. find_workloads: parallel scan, plus an index cache in anchor-kube (namespace/workload -> cluster, TTL 10 min). If a cluster times out, return partial results naming the clusters not checked, never a bare failure. The 60 s cap is a ceiling, not a target. Report find_workloads p50/p95 in the rerun.
-2. A catalog_lookup namespace counts as verified only when the catalog also gives the cluster and the environment matches. If a later read on it returns not found, fall back to find_workloads once.
-3. Don't map uat to uat5. The probe guard needs the environment class, not a specific environment: treat generic uat as non-prod, allow the probe, and label it "env: uat (not specific)". Where a specific cluster is needed, resolve it from the catalog; if more than one uat environment fits, ask once with uat1-uat8 buttons from clusters.yaml.
-4. Apply this to every ask_user call: asking for a project, namespace or cluster is allowed only after the lookups that could answer it were tried this turn (image_source, search_projects, catalog_lookup, find_workloads). Add a test.
+Before I deploy a789c5a: two corrections from me, plus fixes for the rows still open. Put them in the same build so rerun 3 measures everything once.
 
-Also before the rerun:
-5. List the 11 mixed rows: question ID, cause, proposed fix, and whether it's a scoring error. If the restart refusal was correct (Anchor is read-only), fix that expected answer in questions.yaml and show me the diff. Don't relax any other expectation without asking.
-6. The 2 exit-code-137 answers: if the question names a workload, read and cite lastState.terminated.reason; if it's a concept question, label the answer as general knowledge.
+Corrections:
+1. Discovery is catalog-first, and no cluster-scoped call is required anywhere. Our access may be namespace-level on any cluster, on-prem or AKS.
+   - The catalog gives service -> environment -> cluster + namespace.
+   - Verify with a namespace-scoped read (the Deployment in that namespace). That read is the evidence.
+   - Only if the catalog has no entry or the read says not found: search the other namespaces the catalog lists for that environment's clusters, namespace-scoped, in parallel, and say the catalog entry is missing or stale.
+   - Keep the existing cluster-wide search only as a last resort on clusters where a cached access check says it's allowed. Never depend on it. A denied cluster-scoped call is expected, not a permission gap.
+   - For questions about cluster-scoped objects (nodes, persistent volumes, cluster issuers), say what couldn't be checked and why.
+   - Report: for every service in questions.yaml, does the catalog give cluster + namespace for each environment asked about? List the gaps.
+2. Environment names: on-prem namespaces end in uat1 or uat01; Azure uses UAT-001. Use one shared normalizer everywhere (find_workloads, clusters.yaml, probe guard, catalog, UI): ignore case and separators, compare the number as an integer. Tests: uat1 = uat01 = uat-001 = UAT-001; it3 = it-003 = IT03; uat1 never matches uat10 or uat11; prod never matches preprod and preprod never matches prod. The production guard must use the parsed environment, never a substring.
 
-Each fix: tests, full suite green, local commit. Then give me the exact deploy command (no placeholders) and the rerun command for all 65: read-only, one question at a time, $15 cap.
+Open rows:
+3. Asking before looking keeps coming back (5 rows across two runs, e.g. "Which Kubernetes context?"). Enforce it inside the ask_user tool, in every mode: any question about where something runs (cluster, context, namespace, environment, project) is refused unless the lookups that could answer it were tried this turn.
+4. The mirror rule: Anchor can't say something is unavailable, not visible, not found or can't be read (flow-typed-followup's "can't read historical restarts", dns-resolver-config) unless a tool result this turn said so. Otherwise it tries the lookup or offers Investigate.
+5. wrong-why-broken-in-ask: in Ask, a "why is X broken" question that needs more than a quick read offers the Investigate hand-off with the target carried over.
+6. Istio rows: the Istio skill uses the host search first (hostname -> Gateway -> VirtualService -> Service). For TLS, use the Gateway's credentialName, cert-manager Certificate status if present, and the TLS probe. Never read Secret data. On AKS the Gateway may be in a namespace Anchor can't read: say so and use the probe.
+7. config-mounted-secrets: check that the workload projection includes volumes, envFrom and env valueFrom secret/configMap references (names only). Compare with the raw spec and tell me whether the answer was wrong.
+8. ownership-team: when the catalog has no owner, say so and fall back to GitLab CODEOWNERS or project maintainers, with the source shown.
+9. The 3 Investigate runs over budget: give me a time breakdown for each (model, tools, verifier, retries) and propose a fix. Don't raise the budget.
 
-
+Each fix: a test that fails without it, full suite green, local commit. Then give me the exact deploy command, and run rerun 3 when I say deployed: read-only, one question at a time, $15 cap, compared with rerun 2.
 
 
 
