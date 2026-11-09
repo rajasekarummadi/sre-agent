@@ -1,18 +1,10 @@
 
-Apply the scorer diff, then freeze the scorer: no more scorer or questions.yaml changes before the final rerun unless I approve one after reading the answer myself. Add a changelog of every scorer change since slice D, with its reason and diff, to docs/coverage-matrix.md.
 
-Build fixes 1-7, with these changes:
-1. Model timeouts: yes. Also report, for the 5 client timeouts, the prompt size, reasoning effort and timeout setting, so we fix the cause and not just retry.
-2. Re-check scope: yes.
-3. Exploration cap: hand off at the skill's stop rule or at 55% of the budget, whichever comes first.
-4. Host search: targeted first: Gateways in the allowlisted istio namespaces, then VirtualServices in the namespaces the catalog lists for that environment. Then a cached host index (10 min), and only last a bounded parallel scan reporting "searched N of M". Every per-namespace read goes through the namespace policy: never a prod or unparseable namespace.
-5. Tools and guards: yes, and make it general: the capability guard checks the full tool registry, not the family's list. If a tool exists outside the family's list, offer it for that turn instead of claiming a missing capability.
-6. Answer content: yes.
-7. RCA title: build it from the confirmed target and symptom, e.g. "usb-dss-accounts (uat5 banker): restarts caused by ...".
-Ownership: the ServiceNow support group if anchor-now can read it without a new tool; otherwise leave it as a known gap until after the demo. Tell me which.
-
-Each fix: a test that fails without it. Full suites green, then the deploy command, then rerun 5 on Sonnet. Regression list first in the report.
-
+None of the three. Keep the 420 s wall. Replace the fixed 55% with a reserve: exploration stops at the skill's stop rule, or when the time left falls below the back half's measured need (review + revision + re-check + RCA). Then shrink the back half:
+- The reviewer gets the draft plus only the cited evidence, bounded, not the full evidence set.
+- The re-check is low effort and checks only whether the reviewer's findings were addressed.
+- If the revision can write the final RCA in the same call, skip the separate RCA writer after a revision.
+When time is still short, skip the revision and list the findings as "not verified". Report the back-half timings per run, and the Investigate median, in rerun 5.
 
 
 
