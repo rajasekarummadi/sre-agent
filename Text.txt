@@ -1,16 +1,17 @@
 
-Independent review of rerun 3. Confirm or correct each point in your diagnosis.
-Regressions (passed in rerun 2, failed in rerun 3): flow-button, dns-resolver-config, routing-openshift-route, ci-pipeline-link-console, ownership-repo, logs-recent-errors, events-namespace, logs-kibana, action-restart. From now on, every rerun report starts with the regression list.
+Apply the scorer diff, then freeze the scorer: no more scorer or questions.yaml changes before the final rerun unless I approve one after reading the answer myself. Add a changelog of every scorer change since slice D, with its reason and diff, to docs/coverage-matrix.md.
 
-1. Follow-ups lost the target (flow-typed-followup, flow-button). Likely caused by the flow-side-question fix. Rule: a follow-up that names no new service or environment keeps the confirmed target, including implicit references ("the restarts", "its logs") and the Investigate button. Only a definition question ("what is CrashLoopBackOff?") doesn't. flow-button answered about usb-dss-maintain-entitlement-delegate in preprod1 on prod02: find where that target came from. This is demo scenario 1, so it comes first.
-2. Answers from the catalog with no live read (dns-service-name, exposure-dns-name, routing-gateway-host, tls-ingress-secret). dns-service-name printed "[name not verified]" and built a DNS name from an unverified namespace. Rules: the catalog finds the target and never answers a live question; every Ask answer about a live object makes at least one live read on the target; TLS, exposure, routing and ingress questions start with the Istio host search (here "ingress" means the Istio Gateway first, then Kubernetes Ingress); "[name not verified]" never reaches an answer.
-3. False "not found" or "can't" after the safety changes (events-namespace, logs-recent-errors, dns-resolver-config, ownership-repo). events-namespace said apl-digital-secure-banker-services-uat5 doesn't exist; it does. My guess: namespace existence is checked against the catalog's list instead of trying the namespace-scoped read. A named namespace is read directly, and only the read's 404 or 403 decides. ownership-repo claimed there is no GitLab project discovery although search_projects exists: check every missing-capability claim against the tool list and refuse it when a tool in that category exists. For dns-resolver-config, say whether the kube-system policy blocked the CoreDNS read.
-4. Scorer: action-restart is a correct read-only refusal; logs-kibana correctly says Kibana isn't connected and offers pod logs. Propose the classification fix and show me the diff; don't change it yet. Check config-repo-values: if the evidence came from a GitLab read by another tool, the expected-tool list is too narrow. routing-openshift-route: we have no OpenShift, so the answer should say plainly there's no Route reader, not "can't see from available evidence".
-5. Wrong targets: usb-dss-accounts in uat5 resolved to three namespaces across questions (apl-digital-secure-banker-services-uat5, apl-digital-banker-services-uat5, apl-secure-digital-services-uat5). With several catalog matches, pick using the channel word (banker) and verify with a read, or show buttons. triage-no-number concluded every deployment was scaled to zero while status-accounts-uat5 found 2 running pods: check whether it read old release Deployments in the wrong namespace.
-6. Timeouts (crash-accounts-restarts, crash-entitlement-preprod, routing-503, ci-deploy-failed-no-link, triage-no-number, ci-pipeline-link-console): the approved timing fixes. ci-deploy-failed-no-link and triage-no-number already had answers when time ran out.
+Build fixes 1-7, with these changes:
+1. Model timeouts: yes. Also report, for the 5 client timeouts, the prompt size, reasoning effort and timeout setting, so we fix the cause and not just retry.
+2. Re-check scope: yes.
+3. Exploration cap: hand off at the skill's stop rule or at 55% of the budget, whichever comes first.
+4. Host search: targeted first: Gateways in the allowlisted istio namespaces, then VirtualServices in the namespaces the catalog lists for that environment. Then a cached host index (10 min), and only last a bounded parallel scan reporting "searched N of M". Every per-namespace read goes through the namespace policy: never a prod or unparseable namespace.
+5. Tools and guards: yes, and make it general: the capability guard checks the full tool registry, not the family's list. If a tool exists outside the family's list, offer it for that turn instead of claiming a missing capability.
+6. Answer content: yes.
+7. RCA title: build it from the confirmed target and symptom, e.g. "usb-dss-accounts (uat5 banker): restarts caused by ...".
+Ownership: the ServiceNow support group if anchor-now can read it without a new tool; otherwise leave it as a known gap until after the demo. Tell me which.
 
-
-
+Each fix: a test that fails without it. Full suites green, then the deploy command, then rerun 5 on Sonnet. Regression list first in the report.
 
 
 
