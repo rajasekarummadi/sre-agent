@@ -1,16 +1,21 @@
 
-Rerun 5: good progress on time (Investigate median 237 s, nothing over 420 s). The regressions are mostly guards misfiring on wording. Stop patching patterns: make the guards structural, and test them offline before any rerun.
 
-1. Answer kind: the agent's final answer declares its kind in a structured field: answered, refused (an action Anchor won't do), missing_capability, not_checked, offer. Guards key off the kind, not the wording:
-   - The live-read guard applies only to "answered" about a live object, and requires a read of the object kind asked about. Never to refused or missing_capability.
-   - missing_capability must name a capability from a fixed list of real gaps (OpenShift Routes, live ConfigMap data, Datadog metrics, F5 config, merge-request listing, broker and queue internals...). A named capability that maps to a bound tool is sent back once. Match capability names, not keywords like "route".
-   - not_checked names the tool that wasn't run and why (time, error, policy).
-2. Guard replay suite: run the new guards offline over every recorded answer from reruns 3, 4 and 5. For each, show the old decision, the new decision and whether that answer passed. An answer that passed before and would now be sent back or changed is a regression: list them. No live rerun until that list is empty or I've approved each one.
-3. GitLab project lookup end to end (config-repo-values, ci-last-pipeline): catalog repo -> image label -> search_projects -> read the file. Show one passing trace for each.
-4. status-entitlement-preprod-obc: why wasn't the workload found in the consumer namespace (catalog, normalizer, or the policy on a prod-hosting cluster)?
-5. config-env-var: retry once on a model service error too, not only on timeouts.
-The scorer and questions.yaml stay frozen. I'll read config-configmap, routing-virtualservice and dns-service-name myself.
-Each fix: a test that fails without it. Full suites green, then the deploy command, then rerun 6 on Sonnet with the regression list first.
+
+Build A–E, with these additions:
+- C: consolidate instead of only sending back. catalog_resolve falls through internally to catalog_lookup and then find_workloads, so "no entry" comes back only when all three found nothing. One catalog entry point for the model, not two it can choose between.
+- Host search: kubernetes_istio_host_search still timed out 7 times after the round-5 redesign. Find out why (is the targeted path used? how long does each step take?) and fix it. tls-ingress-secret, routing-gateway-host and the exposure rows depend on it.
+- Answer kind must match the content: an "answered" that says nothing could be determined becomes not_checked with the real reason.
+- Don't report a failed attempt as "couldn't check" when a later read got the answer (dns-resolver-config). Report only the gaps that remain.
+- Model gateway: 10 connection failures in one run, about 16 s each. Check whether they happen on reused idle connections. If so, set the client's keep-alive expiry below the gateway's idle timeout and retry connection resets immediately. Report the failure count per run from now on.
+- B: log which tool and question triggered a cap, so runaway loops show up in the report. Also explain why "What caused the restarts?" called list_pipeline_jobs at all.
+- Report: mark questions that flipped between pass and fail across reruns 4, 5 and 6 as flaky, so we fix causes, not single-run noise.
+
+Question set correction, owner-approved: we don't run OpenShift. Our clusters are Kubernetes on-prem (Rancher) and AKS.
+- Remove routing-openshift-route from questions.yaml; the bar becomes 55 of 64. Record it in the scorer changelog with that reason.
+- Remove OpenShift from the capability-gap list. If someone asks about OpenShift, Anchor says plainly we don't run it and answers with the Istio or Kubernetes equivalent.
+- List any other questions that mention technology we don't run, with proposed replacements. Don't change them until I approve.
+
+E first: zero replay regressions before the deploy. Then tests that fail without each fix, full suites green, the deploy command, and rerun 7 with the regression list first.
 
 
 
