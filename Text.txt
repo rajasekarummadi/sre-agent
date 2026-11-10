@@ -1,9 +1,13 @@
 
 
-ANCHOR_KIBANA defaults to on; keep the flag as an off switch until after the demo.
-Before the merge: golden set green with it on and off; the Kibana-down test and the redaction test must pass.
-questions.yaml, owner-approved and recorded in the changelog: logs-kibana now expects an answer from Kibana with sources, because the demo runs with Kibana on and the bar should measure what we demo. No other changes to the 64.
-The new log questions go in a separate file (evals/questions-kibana.yaml), reported separately. Propose the 10 for my approval before writing them: real services and environments from the catalog, UAT only. Cover: when errors started for a service; its top error signatures; errors right after its last deploy; a specific exception search (e.g. HikariPool); a trace or correlation ID lookup; Istio access logs for a 503 with response flags; whether the same error appears in other services; a sudden drop in log volume while pods look healthy; a Spring Boot startup failure; and a before/after comparison around a change.
+
+1. False premises: questions 1, 6, 8 and 9 assume a problem exists. If the logs show no errors, no 503s, logs present, or a clean start, the correct answer says so with the Kibana source and must not invent a cause; score that as a pass. Point question 9 at a service that's actually healthy if one is available, so we test that Anchor pushes back on a false premise.
+2. Question 5: no fixed ID. Change it to "Take a recent error from usb-dss-client-authorization in uat5 and follow its correlation ID across services."
+3. Question 10: no fixed clock time. Change it to "Compare usb-dss-accounts error rates in uat5 banker over the last hour with the same hour yesterday."
+4. Question 7: the unscoped search stays within nonprod indices and a 4-hour window, and returns only the top services by count.
+5. Spread the services: usb-dss-accounts appears in 4 questions. If AKS logs are in Kibana, move question 1 or 10 to a service on an AKS cluster. If they aren't, make that question ask about an AKS service and expect a plain "not in Kibana" answer.
+6. These targets are on PCI UAT clusters: the redaction test must pass before any of these questions run.
+The scorer checks form only, so after each run list the 10 answers with their Discover links for my hand review.
 
 
 
