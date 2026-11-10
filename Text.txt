@@ -1,18 +1,9 @@
 
 
-
-Option 1, with these conditions:
-- From orchestrator, intake and evidence-plan, keep only the Kibana-specific rules (index choice, field names, time windows, query patterns, signature grouping). Drop anything Anchor's harness already owns (mode choice, intake, evidence format, report shape), and list what you dropped.
-- Converted skills name only tools you discovered on the server, and follow the playbook shape in designdoc2/Investigation skills.md (first batch, branches, what changed, stop rule, answer shape), so the later investigation-skills work merges with them instead of rewriting them.
-- k8s-crashloop, istio-503, egress and cert use Kibana first only when ANCHOR_KIBANA is on; with it off, they behave exactly as today. Keep the pod-log fallback for crash output Kibana misses.
-- A golden test per converted skill, with recorded responses from the real tools.
-
-
-
-
-
-
-
+ANCHOR_KIBANA defaults to on; keep the flag as an off switch until after the demo.
+Before the merge: golden set green with it on and off; the Kibana-down test and the redaction test must pass.
+questions.yaml, owner-approved and recorded in the changelog: logs-kibana now expects an answer from Kibana with sources, because the demo runs with Kibana on and the bar should measure what we demo. No other changes to the 64.
+The new log questions go in a separate file (evals/questions-kibana.yaml), reported separately. Propose the 10 for my approval before writing them: real services and environments from the catalog, UAT only. Cover: when errors started for a service; its top error signatures; errors right after its last deploy; a specific exception search (e.g. HikariPool); a trace or correlation ID lookup; Istio access logs for a 503 with response flags; whether the same error appears in other services; a sudden drop in log volume while pods look healthy; a Spring Boot startup failure; and a before/after comparison around a change.
 
 
 
