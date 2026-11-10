@@ -1,21 +1,12 @@
 
 
 
-Build A–E, with these additions:
-- C: consolidate instead of only sending back. catalog_resolve falls through internally to catalog_lookup and then find_workloads, so "no entry" comes back only when all three found nothing. One catalog entry point for the model, not two it can choose between.
-- Host search: kubernetes_istio_host_search still timed out 7 times after the round-5 redesign. Find out why (is the targeted path used? how long does each step take?) and fix it. tls-ingress-secret, routing-gateway-host and the exposure rows depend on it.
-- Answer kind must match the content: an "answered" that says nothing could be determined becomes not_checked with the real reason.
-- Don't report a failed attempt as "couldn't check" when a later read got the answer (dns-resolver-config). Report only the gaps that remain.
-- Model gateway: 10 connection failures in one run, about 16 s each. Check whether they happen on reused idle connections. If so, set the client's keep-alive expiry below the gateway's idle timeout and retry connection resets immediately. Report the failure count per run from now on.
-- B: log which tool and question triggered a cap, so runaway loops show up in the report. Also explain why "What caused the restarts?" called list_pipeline_jobs at all.
-- Report: mark questions that flipped between pass and fail across reruns 4, 5 and 6 as flaky, so we fix causes, not single-run noise.
+Option 1, with these conditions:
+- From orchestrator, intake and evidence-plan, keep only the Kibana-specific rules (index choice, field names, time windows, query patterns, signature grouping). Drop anything Anchor's harness already owns (mode choice, intake, evidence format, report shape), and list what you dropped.
+- Converted skills name only tools you discovered on the server, and follow the playbook shape in designdoc2/Investigation skills.md (first batch, branches, what changed, stop rule, answer shape), so the later investigation-skills work merges with them instead of rewriting them.
+- k8s-crashloop, istio-503, egress and cert use Kibana first only when ANCHOR_KIBANA is on; with it off, they behave exactly as today. Keep the pod-log fallback for crash output Kibana misses.
+- A golden test per converted skill, with recorded responses from the real tools.
 
-Question set correction, owner-approved: we don't run OpenShift. Our clusters are Kubernetes on-prem (Rancher) and AKS.
-- Remove routing-openshift-route from questions.yaml; the bar becomes 55 of 64. Record it in the scorer changelog with that reason.
-- Remove OpenShift from the capability-gap list. If someone asks about OpenShift, Anchor says plainly we don't run it and answers with the Istio or Kubernetes equivalent.
-- List any other questions that mention technology we don't run, with proposed replacements. Don't change them until I approve.
-
-E first: zero replay regressions before the deploy. Then tests that fail without each fix, full suites green, the deploy command, and rerun 7 with the regression list first.
 
 
 
