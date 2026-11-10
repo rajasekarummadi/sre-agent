@@ -1,12 +1,16 @@
 
+Rerun 5: good progress on time (Investigate median 237 s, nothing over 420 s). The regressions are mostly guards misfiring on wording. Stop patching patterns: make the guards structural, and test them offline before any rerun.
 
-None of the three. Keep the 420 s wall. Replace the fixed 55% with a reserve: exploration stops at the skill's stop rule, or when the time left falls below the back half's measured need (review + revision + re-check + RCA). Then shrink the back half:
-- The reviewer gets the draft plus only the cited evidence, bounded, not the full evidence set.
-- The re-check is low effort and checks only whether the reviewer's findings were addressed.
-- If the revision can write the final RCA in the same call, skip the separate RCA writer after a revision.
-When time is still short, skip the revision and list the findings as "not verified". Report the back-half timings per run, and the Investigate median, in rerun 5.
-
-
+1. Answer kind: the agent's final answer declares its kind in a structured field: answered, refused (an action Anchor won't do), missing_capability, not_checked, offer. Guards key off the kind, not the wording:
+   - The live-read guard applies only to "answered" about a live object, and requires a read of the object kind asked about. Never to refused or missing_capability.
+   - missing_capability must name a capability from a fixed list of real gaps (OpenShift Routes, live ConfigMap data, Datadog metrics, F5 config, merge-request listing, broker and queue internals...). A named capability that maps to a bound tool is sent back once. Match capability names, not keywords like "route".
+   - not_checked names the tool that wasn't run and why (time, error, policy).
+2. Guard replay suite: run the new guards offline over every recorded answer from reruns 3, 4 and 5. For each, show the old decision, the new decision and whether that answer passed. An answer that passed before and would now be sent back or changed is a regression: list them. No live rerun until that list is empty or I've approved each one.
+3. GitLab project lookup end to end (config-repo-values, ci-last-pipeline): catalog repo -> image label -> search_projects -> read the file. Show one passing trace for each.
+4. status-entitlement-preprod-obc: why wasn't the workload found in the consumer namespace (catalog, normalizer, or the policy on a prod-hosting cluster)?
+5. config-env-var: retry once on a model service error too, not only on timeouts.
+The scorer and questions.yaml stay frozen. I'll read config-configmap, routing-virtualservice and dns-service-name myself.
+Each fix: a test that fails without it. Full suites green, then the deploy command, then rerun 6 on Sonnet with the regression list first.
 
 
 
