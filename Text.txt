@@ -1,18 +1,30 @@
 
-Discovery only: no changes, no commits. Context: S2 in designdoc2/Investigation
-skills.md, section "Stop and steer". Answer with file:line references.
+Yes, with these conditions:
+1. Before any S1 change: show me git status, then commit the 293 pending
+   GitLab-redesign files on their own, in the repos they belong to, and tag
+   pre-s1-2026-11-17. Never mix them into S1 commits.
+2. .github/copilot-instructions.md and designdoc2/Investigation skills.md
+   are now current. Read both; commit the rules file on its own.
+3. bad-deploy: replace the stale tool names (get_deployments,
+   get_replicasets, get_pods, get_events) with kubernetes_deployment,
+   kubernetes_workload_diagnostics, kubernetes_pods, kubernetes_events.
+4. New primary skills: errors-slowness-dependencies (works from pod logs
+   without Kibana), partial-intermittent, capacity-scheduling (route
+   capacity_resources here, not generic-triage), environment-diff
+   (compares two environments with existing tools) and incident-triage.
+   generic-triage stays as the fallback.
+5. Harness: build all of your table 4. The first batch follows the
+   discovery rules (catalog-first, namespace-scoped, no cluster-wide calls
+   on prod-hosting clusters), counts toward the call caps, and uses crash
+   diagnostics and pod logs when Kibana is off.
+6. No new tools in S1 (HPA, CronJob, metrics, commit compare, VirtualService
+   history, Panorama commits, HTTP probe, F5). Skills say what they
+   couldn't check.
+7. Known-answer pass: names the cause, cites evidence, within 420 s;
+   report the median.
+Order: merges, new skills, harness, evals; one commit each. Golden set
+green, no new flags, full suites green before each commit. No live runs
+tonight 8:00-11:59 PM CT (GitLab upgrade). After the harness commit, tell
+me which live questions to rerun; don't start a rerun yourself.
 
-1. How investigations run: on LangGraph's server (langgraph.json, langgraph
-   dev/up) or our own runner (FastAPI or a worker calling astream/ainvoke)?
-   Name the files and functions.
-2. Checkpointer: which class (PostgresSaver or AsyncPostgresSaver), where it
-   is configured, and how thread_id is set per investigation.
-3. Streaming to the UI: SSE or WebSocket, which stream_mode, and where.
-4. Cancelling today: do we hold a handle to the running task? If it were
-   cancelled, would an in-flight model call through APIM and in-flight MCP
-   tool calls stop, or keep running?
-5. A message sent during a run, and one sent after the RCA: what happens
-   today (new run, same thread, ignored), and what the UI shows.
-6. Do we already use interrupt(), Command, update_state or get_state anywhere?
-7. Versions of langgraph, langgraph-checkpoint-postgres and langgraph-sdk.
 
