@@ -28,3 +28,14 @@ tonight 8:00-11:59 PM CT (GitLab upgrade). After the harness commit, tell
 me which live questions to rerun; don't start a rerun yourself.
 
 
+
+
+
+
+
+Only row 3 for now. Build the eval setup with case 3; I'll add rows 1, 2
+and 4 later. Record their tool results from the stored events of threads
+45a7ca8e and aedc48f8.
+
+
+
