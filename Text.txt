@@ -1,29 +1,24 @@
-S1 checks before S2a. No harness changes until I've seen steps 2 and 3.
-
-0. Correction: the 8:00-11:59 PM CT limit was only for Nov 17 (GitLab
-   upgrade). Live runs are fine at any time: read-only, UAT only, one
-   question at a time, $15 cap.
-1. Case 3 expects the Shield 403 ("not associated with any group
-   authorized to access the namespace"), not the POM failure. Fix the case
-   if it still says POM.
-2. Regression check: rerun 6 named the 403 live and passed; now both
-   replays say the cause can't be determined, though the 403 is in the
-   recorded job log. Replay ci-deploy-failed-no-link and bbds-grphqldep
-   twice each on pre-s1-2026-11-17 and on cbbc009, same recordings. Report
-   per run: cause named, cited evidence IDs, confidence level, and which
-   step changed the outcome (first-batch "not in recording" results, the
-   false-premise guard, computed confidence, or the RCA writer).
-3. bbds run 2 named SQLServer2008Dialect without citing evidence. Find why
-   the RCA writer didn't attach the log evidence that names the class.
-Report 2 and 3, then stop.
-
-After my go-ahead:
-4. Re-record only what still exists for each incident window: GitLab
-   pipeline and job logs, and Kibana logs pinned to the incident time. Mark
-   pod and event reads from the incident as historical and unavailable;
-   never record today's state into an old incident. List what each case can
-   and can't get back.
-5. Run the 64 frozen questions live on cbbc009, one at a time, $15 cap.
-   Report against the bar (pass rate and strict rate), with per-question
-   changes from the last rerun.
+Yes, deploy cbbc009, with these steps:
+1. Before rebuilding, note the current image tags for 7ccdcd1 so we can
+   roll back with one command; tell me that command.
+2. Rebuild, restart, health-check, then scripts/smoke_live.sh. If smoke
+   fails, roll back and stop.
+3. Correction: the 8:00-11:59 PM CT limit was only for Nov 17 (GitLab
+   upgrade). Live runs are fine any time: read-only, UAT only, one question
+   at a time, $15 cap.
+4. First live question: ci-deploy-failed-no-link, twice. Its job log still
+   exists, so this is a fair test of S1. Rerun 6 named the Shield 403 live
+   and passed. Report the cause named, cited evidence IDs and confidence
+   level for each run.
+5. Case 3 expects the Shield 403, not the POM failure; fix the case if it
+   still says POM.
+6. If step 4 doesn't name the 403: stop and find which S1 step caused it
+   (first batch, false-premise guard, computed confidence or the RCA
+   writer) by replaying the same recording on pre-s1-2026-11-17 and
+   cbbc009. Also find why bbds run 2 named SQLServer2008Dialect without
+   citing evidence. No fixes until I've seen it.
+7. If step 4 names the 403: run the 64 frozen questions live, one at a
+   time, $15 cap, and report against the bar with per-question changes
+   from the last rerun.
+Re-recording the other incidents waits for my go-ahead.
 
