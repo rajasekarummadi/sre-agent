@@ -1,13 +1,9 @@
-Don't roll back; cbbc009 stays deployed.
-1. The smoke failure is live-data drift, not S1: the target has 0 restarts
-   now, and saying so with evidence is the false-premise rule working.
-   Change that smoke step: pass if the follow-up starts an investigation,
-   or if the target has 0 restarts and the answer says so, citing the
-   status evidence. Log which path it took. Commit on its own.
-2. Commit the case 3 fix (Shield 403) on its own.
-3. anchor-kibana:error_share is a stale tool name, the same class S1 fixed
-   in bad-deploy. Point the three skills at the real Kibana tools
-   (error_histogram or top_error_signatures), with a test. Commit; it ships
-   with the next build, no redeploy now.
-4. Then run step 4 (ci-deploy-failed-no-link live, twice) and continue with
-   6 or 7 as agreed.
+Redeployed cbbc009 with ANCHOR_UNIFIED_PATH=true.
+1. Rerun scripts/smoke_live.sh first: the earlier smoke ran with the flag
+   off, so it tested the old path. Report each step again.
+2. Then step 4 (ci-deploy-failed-no-link live, twice) and 6 or 7 as agreed.
+3. After that, one commit: make ANCHOR_UNIFIED_PATH=true the default in the
+   compose and env templates, kept as the off switch like ANCHOR_KIBANA, so
+   every deploy runs the path we test and demo. Old paths stay until after
+   Dec 1.
+
