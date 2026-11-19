@@ -1,41 +1,29 @@
+S1 checks before S2a. No harness changes until I've seen steps 2 and 3.
 
-Yes, with these conditions:
-1. Before any S1 change: show me git status, then commit the 293 pending
-   GitLab-redesign files on their own, in the repos they belong to, and tag
-   pre-s1-2026-11-17. Never mix them into S1 commits.
-2. .github/copilot-instructions.md and designdoc2/Investigation skills.md
-   are now current. Read both; commit the rules file on its own.
-3. bad-deploy: replace the stale tool names (get_deployments,
-   get_replicasets, get_pods, get_events) with kubernetes_deployment,
-   kubernetes_workload_diagnostics, kubernetes_pods, kubernetes_events.
-4. New primary skills: errors-slowness-dependencies (works from pod logs
-   without Kibana), partial-intermittent, capacity-scheduling (route
-   capacity_resources here, not generic-triage), environment-diff
-   (compares two environments with existing tools) and incident-triage.
-   generic-triage stays as the fallback.
-5. Harness: build all of your table 4. The first batch follows the
-   discovery rules (catalog-first, namespace-scoped, no cluster-wide calls
-   on prod-hosting clusters), counts toward the call caps, and uses crash
-   diagnostics and pod logs when Kibana is off.
-6. No new tools in S1 (HPA, CronJob, metrics, commit compare, VirtualService
-   history, Panorama commits, HTTP probe, F5). Skills say what they
-   couldn't check.
-7. Known-answer pass: names the cause, cites evidence, within 420 s;
-   report the median.
-Order: merges, new skills, harness, evals; one commit each. Golden set
-green, no new flags, full suites green before each commit. No live runs
-tonight 8:00-11:59 PM CT (GitLab upgrade). After the harness commit, tell
-me which live questions to rerun; don't start a rerun yourself.
+0. Correction: the 8:00-11:59 PM CT limit was only for Nov 17 (GitLab
+   upgrade). Live runs are fine at any time: read-only, UAT only, one
+   question at a time, $15 cap.
+1. Case 3 expects the Shield 403 ("not associated with any group
+   authorized to access the namespace"), not the POM failure. Fix the case
+   if it still says POM.
+2. Regression check: rerun 6 named the 403 live and passed; now both
+   replays say the cause can't be determined, though the 403 is in the
+   recorded job log. Replay ci-deploy-failed-no-link and bbds-grphqldep
+   twice each on pre-s1-2026-11-17 and on cbbc009, same recordings. Report
+   per run: cause named, cited evidence IDs, confidence level, and which
+   step changed the outcome (first-batch "not in recording" results, the
+   false-premise guard, computed confidence, or the RCA writer).
+3. bbds run 2 named SQLServer2008Dialect without citing evidence. Find why
+   the RCA writer didn't attach the log evidence that names the class.
+Report 2 and 3, then stop.
 
-
-
-
-
-
-
-Only row 3 for now. Build the eval setup with case 3; I'll add rows 1, 2
-and 4 later. Record their tool results from the stored events of threads
-45a7ca8e and aedc48f8.
-
-
+After my go-ahead:
+4. Re-record only what still exists for each incident window: GitLab
+   pipeline and job logs, and Kibana logs pinned to the incident time. Mark
+   pod and event reads from the incident as historical and unavailable;
+   never record today's state into an old incident. List what each case can
+   and can't get back.
+5. Run the 64 frozen questions live on cbbc009, one at a time, $15 cap.
+   Report against the bar (pass rate and strict rate), with per-question
+   changes from the last rerun.
 
