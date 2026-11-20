@@ -16,7 +16,7 @@ Every playbook runs the same steps, so an investigation follows a plan instead o
 8. **Mitigation:** the fastest safe way to restore service, as a suggestion for a person to run, with the exact step: roll back to the previous pipeline, shift VirtualService weight back, scale out, or fail over to the other site. Anchor never runs it.
 9. **Answer:** the cause in one sentence with its confidence level, cited evidence, what changed, what was ruled out, what wasn't verified, the mitigation, who to engage (the ServiceNow assignment group), and a short incident note ready to paste.
 
-**Time budget:** first batch by 60 s, hypothesis tests by 180 s, answer by 300 s.
+**Time budget:** checkpoints at 60 s (first batch) and 180 s (hypotheses tested), within today's 420 s limit; target median under 300 s.
 
 **Everywhere:**
 
@@ -43,7 +43,7 @@ Each failure engineers actually report maps to one playbook; the last column say
 | Database, Redis, Kafka or MQ failures | Errors, slowness and dependencies | Broker health, consumer lag, queue depth, database locks |
 | Credentials rotated, Vault sync failed | Errors, slowness and dependencies | None |
 | Firewall or network change blocking traffic | 503 and routing; checks for any dependency | None |
-| ServiceNow incident, "broken since last night" | Incident triage | Production data, until approved |
+| ServiceNow incident, "broken since last night" | Incident triage | ServiceNow lookups fail for real services until N2; production data needs approval |
 
 ## Crash loop and restarts
 
@@ -209,13 +209,13 @@ Most application failures surface as a Java exception in the logs, and the root 
 
 ## Known-answer incidents
 
-The live test can't tell a right answer from a wrong one, because UAT may have no real incident when it runs. These cases can: you write the real cause in one line, and Anchor passes only if it names that cause, cites evidence for it, and answers within 300 s. Each case replays recorded tool results twice, so it is cheap and live data changing doesn't matter. The CIO headline becomes "on N real past incidents, Anchor named the cause in M, in a median of X minutes".
+The live test can't tell a right answer from a wrong one, because UAT may have no real incident when it runs. These cases can: you write the real cause in one line, and Anchor passes only if it names that cause, cites evidence for it, and finishes within the 420 s limit. Each case replays recorded tool results twice, so it is cheap and live data changing doesn't matter. The CIO headline becomes "on N real past incidents, Anchor named the cause in M, in a median of X minutes".
 
 | # | Incident or thread | Service and environment | Real cause, one line | Playbook |
 | --- | --- | --- | --- | --- |
-| 1 | Thread 45a7ca8e | usb-dss-accounts, uat5 banker |  | Crash loop |
-| 2 | bbds-grphqldep (aedc48f8) | bbds-grphqldep |  | Crash loop |
-| 3 | ci-deploy-failed-no-link | usb-dss-authorization pipeline | Confirm Anchor's answer: a dependency's POM couldn't be downloaded | Pipeline failure |
+| 1 | usb-dss-accounts-2a3d5954 (45a7ca8e made no tool reads) | usb-dss-accounts, uat5 banker |  | Crash loop |
+| 2 | bbds-grphqldep (aedc48f8) | bbds-grphqldep | Hibernate can't load org.hibernate.dialect.SQLServer2008Dialect, so pods crash on start (recorded RCA; confirm) | Crash loop |
+| 3 | ci-deploy-failed-no-link | usb-dss-authorization pipeline | Shield 403: the deploy user isn't in an allowed deploy group (from the job log) | Pipeline failure |
 | 4 | Last night's production incident |  |  | Incident triage |
 | 5 |  |  |  |  |
 | 6 |  |  |  |  |
@@ -259,9 +259,41 @@ After my go-ahead:
 - The error-signature table as a data file engineers extend.
 - Known-answer set in evals/rca/: one case per incident I list, replaying
   recorded tool results, with my one-line cause. Pass = names the cause,
-  cites evidence, under 300 s. Run each case twice; report per case.
+  cites evidence, within 420 s. Run each case twice; report per case.
 - Golden tests for each playbook branch, with recorded responses.
 No new flags. Full suites green before each commit.
+```
+
+## Prompt for Copilot (N2)
+
+Sonnet, in its own chat in the anchor-servicenow repo; it can run alongside S1. It makes the known-issues and what-changed steps work for real services.
+
+```text
+N2: ServiceNow lookups for real services. Repo: the anchor-servicenow
+server (anchor-now). Rules: .github/copilot-instructions.md in
+anchor-main-v2. From the S1 report: now:related_incidents and
+now:list_changes fail for every real service ("Unknown service
+'usb-dss-accounts'. Known services: payments-api") because the service map
+has one placeholder entry, and there's no search by error text.
+
+Report first, no changes:
+1. How a service name becomes a ServiceNow query today (CI, business
+   service, assignment group or text), and where the map is loaded from.
+2. Which catalog field can fill the map, how many catalog services would
+   map, and which wouldn't.
+
+After my go-ahead:
+1. Fill the service map from the catalog at startup (read-only, cached);
+   remove the placeholder.
+2. related_incidents: optional text search on short_description and
+   description (last 90 days, at most 20 results, fields trimmed).
+3. list_changes: the same mapping, plus optional text search (hostname,
+   F5 pool or VIP name) and an assignment-group filter, so network-team
+   changes on the request path show up in the window.
+4. An unmapped service returns "not mapped", which Anchor reports as not
+   checked.
+5. Tests with recorded ServiceNow responses. Read-only: no work notes, no
+   writes. Tell me what to deploy.
 ```
 
 ## Stop and steer
@@ -278,41 +310,48 @@ Engineers need to stop an investigation and to steer it, both while it runs and 
 
 ## Prompts for Copilot (S2a and S2b)
 
-Two prompts, Opus, in the main chat, not alongside S1: S2a (Stop) first, then S2b (steering fixes and Continue) once S2a is merged. Each starts with a short plan, because the discovery already answered the report questions.
+S2a goes to the main chat (Opus), with four quick items from the S1 runs first. S2b follows once S2a is merged, likely after Dec 1 unless the director demo needs it. The catalog latency prompt (C1) runs in a separate Sonnet chat.
 
 ```text
-S2a: Stop button for investigations. Spec: designdoc2/Investigation
-skills.md, section "Stop and steer". Rules: .github/copilot-instructions.md.
-Your discovery report on today's code is the starting point; build on it.
+Pause the known-answer and fair-S1-test work; there are no proper incidents
+to test against. Quick items first, each with a test, one commit each:
+1. Smoke-script fix as you proposed (approved): detect an investigation by
+   intent == investigate and mode != ask; send explicit Investigate mode
+   for the pipeline and typed steps.
+2. RCA writer: when the summary fails validation for length, shorten and
+   retry once; never drop the cause claim or its evidence IDs.
+3. ask_user: cap at the 6 top-ranked options instead of being rejected.
+4. Classifier check, no tools: run only the skill classifier on the 64
+   frozen questions and the smoke questions, on pre-s1-2026-11-17 and on
+   cbbc009; report skills that changed. If pipeline or job questions now go
+   to deployment-rollout-failure, narrow its description to Kubernetes
+   rollouts and add a golden row.
 
+Then S2a: Stop button for investigations. Spec: designdoc2/Investigation
+skills.md, section "Stop and steer". Rules: .github/copilot-instructions.md.
+Build on your Nov 17 discovery report; re-check its line numbers after S1.
 Plan first: the files you'll change and how, in a short list. Build after
 my go-ahead.
-
-1. Route: POST /v1/investigations/{id}/stop cancels self._tasks[id]
-   (service.py:632). Stopping a run that isn't running returns 409, like
-   /steer.
-2. On CancelledError (service.py:517): set status "stopped", never
-   "failed", and make the orphan sweeper leave it alone. Build a partial
-   report from the checkpoint (aget_state): what was checked, current
-   hypotheses, what's left. No model call: a template over the state.
-   Emit a "stopped" event so the SSE stream and the UI update.
-3. Parallel tool jobs are already cancelled (investigation.py:3276-3285).
-   Check whether langchain-mcp-adapters 0.3.2 sends an MCP cancel
-   notification and tell me. If it doesn't, that's acceptable: the tools
-   are read-only.
-4. UI: a Stop button beside the steer box while a run is running. After a
-   stop, show the partial report and a Continue button (S2b makes Continue
-   resume from the evidence; until then it starts a new investigation for
-   the same target).
-5. If ANCHOR_CHECKPOINTER_DSN is unset, the app falls back to MemorySaver
-   (main.py:87). Log a warning at startup when that happens.
+1. Route: POST /v1/investigations/{id}/stop cancels the run's task.
+   Stopping a run that isn't running returns 409, like /steer.
+2. On cancellation: status "stopped", never "failed", and the orphan
+   sweeper leaves it alone. Partial report from the checkpoint (aget_state):
+   what was checked, current hypotheses, what's left. No model call: a
+   template over the state. Emit a "stopped" event for the SSE stream and UI.
+3. Tell me whether langchain-mcp-adapters sends an MCP cancel notification;
+   if not, that's acceptable (read-only tools).
+4. UI: a Stop button beside the steer box while a run is running; after a
+   stop, show the partial report and a Continue button (until S2b, Continue
+   starts a new investigation for the same target).
+5. Log a startup warning when ANCHOR_CHECKPOINTER_DSN is unset and the app
+   falls back to MemorySaver.
 6. Tests: stop during a model call; stop during parallel tool calls; status
    stays "stopped" after a sweeper pass; no model call after the stop; stop
    on a finished run returns 409.
 Golden set green, no new flags, full suites green before each commit.
 ```
 
-Then S2b, after S2a is merged:
+Then S2b, after S2a is merged (likely after Dec 1):
 
 ```text
 S2b: steering fixes and continue after the RCA. Spec: designdoc2/
@@ -349,4 +388,23 @@ my go-ahead.
    contradicting statement; continue after a stop; worker restart between
    the RCA and continue (Postgres checkpointer).
 Golden set green, no new flags, full suites green before each commit.
+```
+
+## Prompt for Copilot (C1: catalog latency)
+
+Sonnet, in a separate chat. The report is read-only, so it can run alongside S2a; if the fix lands in anchor-main-v2, build it after S2a commits.
+
+```text
+Catalog lookups are slow. Report first, no changes:
+1. Time each step of a target lookup on the deployed build for 5 recent
+   threads: the catalog call, environment normalizing, the namespace-scoped
+   verify read, any fallback search, and model turns in between. Where does
+   the time go, and what changed since rerun 3, when lookups took about
+   half a second?
+2. What is called repeatedly within one run or across runs that could be
+   cached?
+After my go-ahead, if a cache is the fix: cache catalog responses only
+(short TTL, keyed on the normalized service and environment), and drop an
+entry when the verify read says not found. Never cache the verify read: it
+is the evidence. Test, and report lookup time before and after.
 ```
