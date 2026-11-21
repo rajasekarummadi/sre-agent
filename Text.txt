@@ -1,20 +1,25 @@
-Go ahead with S2a as planned, plus:
-1. Stop is idempotent: a second Stop while stopping returns the same result
-   and doesn't cancel again. The button shows "Stopping..." until the
-   stopped event arrives.
-2. Write the partial report and status under asyncio.shield, so a second
-   cancel or a shutdown can't cut it off. A CancelledError without a stop
-   request (shutdown) keeps today's behaviour.
-3. The stopped run keeps its token and cost totals so far.
-4. Extra tests: double Stop; Stop on an Ask run (_run_inline); the SSE
-   stream ends with the stopped event.
-5. Separate commit before S2a: ci-merge-request goes to incident-triage.
-   Narrow incident-triage to incident numbers, alerts and "broken since"
-   questions; merge requests, commits and pipelines go to cicd-failure. Add
-   a golden row. Leave the other "worth a look" questions until the 64-run
-   shows whether they fail.
-Then give me the rebuild and redeploy command. After I deploy, rerun smoke
-and run the 64 frozen questions live (one at a time, $15 cap), against the
-bar, with per-question changes from the last rerun.
+Go ahead with S2b as planned, with these answers and additions:
+A. Yes, an immediate reply, as a template with no model call: "Added to the
+   running investigation; it will answer in its next update." Then the
+   "Guidance applied" entry when the run picks it up.
+B. Its own route: POST /v1/investigations/{id}/continue, like /stop and
+   /steer, with the same 404/409 checks. It can call
+   service.start(continue_of=...) inside.
+C. A mid-run message that names a different service or environment than the
+   running investigation isn't attached as guidance. Reply that an
+   investigation on <target> is running, with Stop and New thread options;
+   no new run.
+D. Seeded evidence keeps its original ID and time and is shown as "from the
+   earlier run (<time>)", so a continuation never presents old reads as
+   fresh.
+E. Confirm Investigate runs still stop at the 420 s limit. If mode_budget
+   returning {} means no limit, that's a bug: tell me before fixing.
+F. Postgres restart test: skipping it when Postgres isn't reachable is fine
+   for the regular suite, but run it against the local stack's Postgres
+   before the S2b commits and report the result.
+Before any change: tag the deployed commit demo-fallback-s2a. If the 64
+frozen questions haven't run on the deployed S2a build, start that run now
+in the background (one at a time, $15 cap) and don't redeploy until it
+finishes; report it against the bar.
 
 
