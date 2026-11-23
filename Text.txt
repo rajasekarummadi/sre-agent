@@ -1,17 +1,17 @@
-filebeat-kubernetes* covers all clusters, including digital-cbc-k8-pci-*
-(not actually PCI despite the name). The error is visible in nonprod Kibana:
-namespace apl-digital-channels-auth-uat1, "retryExhaust Exception while
-retrieveCache (ErrorCode=404-001)". So Kibana does cover this service, and
-Anchor's query missed it.
-1. If filebeat-kubernetes* isn't on ES_INDEX_ALLOWLIST, adding it for the
-   nonprod Kibana is approved. Production Kibana still needs sign-off.
-2. Find why 927efc60's Kibana queries returned zero. Check the index pattern
-   used, the namespace or cluster field and value it filtered on, the time
-   window, and whether correlationId is a real field or only text inside the
-   JSON in message (then a field query finds nothing; it needs a text
-   search on message). Report the exact query it sent.
-3. Change fix A: the root fix is the query. Keep the "zero hits on an
-   uncovered index = not checked" guard as well.
-4. Add a test that replays this query shape for apl-digital-channels-auth-uat1
-   and expects the 404-001 hits.
-5. In clusters.yaml, set pci: false for the digital-cbc-k8-pci clusters.
+Go ahead with 1-4, with these changes:
+1. Kibana does hold these logs: filebeat-kubernetes*, namespace
+   apl-digital-channels-auth-uat1, "retryExhaust Exception while
+   retrieveCache (ErrorCode=404-001)". So the plan can't assume Kibana has
+   none of it. Separate commit, before this one: report the exact query
+   927efc60 sent (index, fields, values, time window) and why it returned
+   zero, then fix it. My guess: correlationId lives as text inside the JSON
+   in message, so a field query finds nothing.
+2. When a log line is pasted, search Kibana for its ErrorCode and message
+   text in that namespace and time window, not only for an ID field.
+3. Expected rerun answer: the 404-001 lines found live in Kibana plus the
+   code reads, so a data condition at Likely or better. "Searched, not
+   found" is a fail for this case.
+4. Still report item E: are customer, session and transaction IDs masked
+   before the model sees pasted lines?
+Build and test now. No redeploy until I say; that's after tomorrow's demo.
+
