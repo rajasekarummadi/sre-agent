@@ -1,83 +1,17 @@
-Create a 12-slide presentation for peer managers in my organization (a 20-minute slot: about 12 minutes of slides, then a live demo). Topic: Anchor, a read-only SRE agent our team built to investigate failures in our Kubernetes estate. Tone: plain language for managers, confident and factual. Use only the facts below; don't add statistics or claims. Keep text in [brackets] as placeholders for me to fill. At most 5 short bullets per slide. Add 2-3 sentences of speaker notes to every slide. Use simple icons and diagrams, no stock photos of people.
-
-Slide 1 - Title
-"Anchor: an SRE agent built on harness engineering, memory and tools". Subtitle: "Read-only investigations for our Kubernetes estate | Peer manager demo | [date]".
-
-Slide 2 - The problem
-- On-call engineers lose the first part of every incident gathering context
-- The evidence is spread across Kubernetes, Istio, Kibana, GitLab, ServiceNow and the firewall
-- Most outages follow a change, but finding the change takes time
-- Anchor does the gathering and shows its evidence
-Notes: Google's SRE teams found that about 70% of outages follow a change to a live system.
-
-Slide 3 - What Anchor does
-- Ask in plain language, in one of three modes: Ask, Investigate or Triage
-- Reads our systems; never changes anything
-- Every claim cites the evidence behind it
-- Returns an answer, or a root-cause report with a status and an incident note ready to paste
-
-Slide 4 - Built on three pillars (three columns with icons)
-- Harness engineering: the code around the model that makes it dependable
-- Memory: what it carries between steps, runs and teams
-- Tools: read-only access to the systems engineers already use
-
-Slide 5 - Harness engineering
-- A fixed loop, with budgets set by the mode
-- A read-only allowlist: any write or unknown tool is rejected
-- Every tool result gets an evidence ID; claims without one don't count
-- A completion guard, an independent reviewer and one bounded revision before any answer
-- Playbooks encode the SRE method: scope, what changed, known issues, ranked hypotheses, a stop rule
-Notes: The model is one part; the harness decides what it may do, for how long, and what counts as proof. More than 2,250 automated tests cover it.
-
-Slide 6 - Memory
-- Thread memory: the confirmed service and findings carry across follow-up questions
-- Run memory: every step is checkpointed, so a stopped run keeps its evidence and survives restarts
-- Evidence memory: every read is stored with an ID and can be opened from the report
-- Team memory: the service catalog, about 30 playbooks, an error-signature table engineers extend, and past ServiceNow incidents [being connected]
-
-Slide 7 - Tools
-- 6 MCP servers, 65 read-only tools
-- Kubernetes: pods, events, workload specs, Istio routing, DNS, TLS, network policies
-- Kibana logs: error trends, top error signatures, request traces
-- GitLab pipelines and job logs; ServiceNow incidents and changes; the service catalog; Panorama firewall rules
-- Works with namespace-level access on AKS and on-prem Rancher
-Notes: Next, once access is approved: F5, Datadog and Artifactory.
-
-Slide 8 - One investigation, five stages (left-to-right process diagram)
-1. Intake: the request is authenticated and redacted; the target is confirmed from the catalog
-2. Orchestrate: the mode sets the budget; the agent picks a playbook and plans its reads
-3. MCP tools: read-only calls; each result becomes evidence with an ID
-4. Evaluate: completion guard, independent reviewer, one bounded revision
-5. Publish: status, cause, cited evidence, what was ruled out, a suggested fix (never run), incident note
-
-Slide 9 - Inside the harness: what each part enforces (grid of 7 boxes, with a loop arrow between Agent and Tools labelled "until done or budget")
-- Intake: input is redacted and size-checked before any model call
-- Mode: Ask (about 12 tool calls and 120 seconds), Investigate (full root-cause analysis with review), Triage (Investigate plus the incident's context)
-- Agent: plans the next read; asks with buttons only when an input can't be found
-- Tools: read-only allowlist, a call budget per playbook, an evidence ID on every result
-- End-of-run checks: open tasks, uncited claims and sources are checked; at most 3 bounces back
-- Reviewer and revision: the draft is checked against cited evidence; one round of at most 3 reads
-- Report: "Established" only when the causal check passes and citations validate; otherwise "Probable" or "Unknown"
-
-Slide 10 - People stay in control
-- Stop at any time: a partial report shows what was checked, current hypotheses and what's left, and cost stops too
-- Steer mid-run: a message like "focus on Kafka" joins the next step
-- Continue after the report with more context [rolling out this week]
-- Guardrails: read-only, no access to secrets, no production namespaces in live runs, fixes suggested but never executed
-
-Slide 11 - Live demo
-1. Ask: a status question answered in seconds, with citations
-2. Investigate a failing service and follow the run live on the Architecture view
-3. Steer or stop it mid-run
-4. The report: status, cause and the evidence behind it
-5. The Scorecard
-
-Slide 12 - Where we are and what's next
-- [Latest result on our 64-question evaluation, against a 55/64 bar]
-- Median investigation time [x min]; each run shows its cost in dollars, about [$x]
-- CIO demo on December 1; a pilot with on-call engineers to follow
-- Asks: read access to F5, Datadog, Artifactory, and production logs in Kibana (with security sign-off)
-- Questions and discussion
-
-
-
+filebeat-kubernetes* covers all clusters, including digital-cbc-k8-pci-*
+(not actually PCI despite the name). The error is visible in nonprod Kibana:
+namespace apl-digital-channels-auth-uat1, "retryExhaust Exception while
+retrieveCache (ErrorCode=404-001)". So Kibana does cover this service, and
+Anchor's query missed it.
+1. If filebeat-kubernetes* isn't on ES_INDEX_ALLOWLIST, adding it for the
+   nonprod Kibana is approved. Production Kibana still needs sign-off.
+2. Find why 927efc60's Kibana queries returned zero. Check the index pattern
+   used, the namespace or cluster field and value it filtered on, the time
+   window, and whether correlationId is a real field or only text inside the
+   JSON in message (then a field query finds nothing; it needs a text
+   search on message). Report the exact query it sent.
+3. Change fix A: the root fix is the query. Keep the "zero hits on an
+   uncovered index = not checked" guard as well.
+4. Add a test that replays this query shape for apl-digital-channels-auth-uat1
+   and expects the 404-001 hits.
+5. In clusters.yaml, set pci: false for the digital-cbc-k8-pci clusters.
